@@ -1,9 +1,9 @@
-.. _roq-aster_futures:
+.. _roq-aster-futures:
 
 .. |checkmark| unicode:: U+2713
 
-roq-aster_futures
-===========
+roq-aster-futures
+=================
 
 
 .. tab:: Unstable
@@ -12,7 +12,7 @@ roq-aster_futures
 
      $ conda install \
            --channel https://roq-trading.com/conda/unstable \
-           roq-aster_futures
+           roq-aster-futures
 
 .. tab:: Stable
 
@@ -20,21 +20,21 @@ roq-aster_futures
 
      $ conda install \
            --channel https://roq-trading.com/conda/stable \
-           roq-aster_futures
+           roq-aster-futures
 
 
-:code:`roq-aster_futures`
-------------------
+:code:`roq-aster-futures`
+-------------------------
 
 .. code-block:: shell
 
-   $ roq-aster_futures [FLAGS]
+   $ roq-aster-futures [FLAGS]
 
 
 Description
 ~~~~~~~~~~~
 
-:code:`roq-aster_futures` is a gateway
+:code:`roq-aster-futures` is a gateway
 
 
 Supports
@@ -106,14 +106,14 @@ Supports
         - |checkmark|
 
 
-.. _roq-aster_futures-flags:
+.. _roq-aster-futures-flags:
 
 Flags
 -----
 
 .. code-block:: shell
 
-   $ roq-aster_futures --help
+   $ roq-aster-futures --help
 
 .. tab:: Flags
 
@@ -139,7 +139,7 @@ Environments
 
    .. code-block:: shell
 
-      $ $CONDA_PREFIX/share/roq-aster_futures/flags/prod/flags.cfg
+      $ $CONDA_PREFIX/share/roq-aster-futures/flags/prod/flags.cfg
 
    .. include:: flags/prod/flags.cfg
      :code: shell
@@ -152,7 +152,7 @@ Configuration
 
 .. code-block:: shell
 
-   $ $CONDA_PREFIX/share/roq-aster_futures/config.toml
+   $ $CONDA_PREFIX/share/roq-aster-futures/config.toml
 
 .. important::
 
