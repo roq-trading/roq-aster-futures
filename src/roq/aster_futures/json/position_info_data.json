@@ -1,0 +1,11 @@
+{
+  "name": "roq/aster_futures/json/PositionInfoData",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "list",
+      "type": "roq/aster_futures/json/PositionInfoDataListItem",
+      "array": "std/span"
+    }
+  ]
+}

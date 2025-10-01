@@ -1,0 +1,18 @@
+{
+  "name": "roq/aster_futures/json/Ack",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "id",
+      "type": "std/int32"
+    },
+    {
+      "name": "error",
+      "type": "roq/aster_futures/json/AckError"
+    },
+    {
+      "name": "result",
+      "type": "roq/aster_futures/json/AckResult"
+    }
+  ]
+}

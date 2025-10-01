@@ -1,0 +1,23 @@
+{
+  "name": "roq/aster_futures/json/Fill",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "arg",
+      "type": "roq/aster_futures/json/Arg"
+    },
+    {
+      "name": "action",
+      "type": "roq/aster_futures/json/Action"
+    },
+    {
+      "name": "data",
+      "type": "roq/aster_futures/json/FillDataItem",
+      "array": "std/span"
+    },
+    {
+      "name": "ts",
+      "type": "std/milliseconds"
+    }
+  ]
+}
