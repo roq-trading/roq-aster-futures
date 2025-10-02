@@ -1,6 +1,7 @@
 .. _roq-aster-futures:
 
 .. |checkmark| unicode:: U+2713
+.. |checkmark-2| unicode:: U+2021
 
 roq-aster-futures
 =================
@@ -488,3 +489,21 @@ Constraints
 
 Comments
 --------
+
+
+References
+----------
+
+Common
+~~~~~~
+
+* :ref:`Using Conda <tutorial-conda>`
+* :ref:`Using Flags <abseil-cpp>`
+* :ref:`Gateway Flags <gateway-flags>`
+* :ref:`Gateway Config <gateway-config>`
+
+Exchange
+~~~~~~~~
+
+* `Website <https://www.asterdex.com/>`__
+* `Documentation <https://docs.asterdex.com/>`__

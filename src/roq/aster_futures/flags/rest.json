@@ -7,7 +7,7 @@
       "name": "uri",
       "type": "roq/io/web/URI",
       "validator": "roq/core/flags/URI",
-      "default": "https://testnet-api.aster_futures.com",
+      "default": "https://fapi.asterdex.com/fapi/",
       "description": "Exchange end-point"
     },
     {

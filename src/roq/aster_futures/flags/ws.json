@@ -7,7 +7,7 @@
       "name": "uri",
       "type": "roq/io/web/URI",
       "validator": "roq/core/flags/URI",
-      "default": "wss://testnet-api.aster_futures.com/ws",
+      "default": "wss://fstream.asterdex.com/",
       "description": "Exchange end-point"
     },
     {
