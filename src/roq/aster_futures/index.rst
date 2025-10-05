@@ -1,7 +1,12 @@
 .. _roq-aster-futures:
 
+.. |dagger| unicode:: U+2020
+.. |double-dagger| unicode:: U+2021
 .. |checkmark| unicode:: U+2713
-.. |checkmark-2| unicode:: U+2021
+.. |right-arrow| unicode:: U+2192
+.. |right-double-arrow| unicode:: U+21D2
+.. |left-right-double-arrow| unicode:: U+21D4
+
 
 roq-aster-futures
 =================
@@ -24,20 +29,6 @@ roq-aster-futures
            roq-aster-futures
 
 
-:code:`roq-aster-futures`
--------------------------
-
-.. code-block:: shell
-
-   $ roq-aster-futures [FLAGS]
-
-
-Description
-~~~~~~~~~~~
-
-:code:`roq-aster-futures` is a gateway
-
-
 Supports
 --------
 
@@ -48,63 +39,95 @@ Supports
 
     .. list-table::
       :widths: auto
+      :align: left
 
-      * - Spot
-        - |checkmark|
-      * - Futures
-        - |checkmark|
-      * - Options
+      * - :cpp:enumerator:`Spot <roq::SecurityType::SPOT>`
         -
-      * - Combos
+        -
+      * - :cpp:enumerator:`Futures <roq::SecurityType::FUTURES>`
+        -
+        -
+      * - :cpp:enumerator:`Swap <roq::SecurityType::SWAP>`
+        - |checkmark|
+        -
+      * - :cpp:enumerator:`Option <roq::SecurityType::OPTION>`
+        -
         -
 
   .. grid-item-card::  Market Data
 
     .. list-table::
       :widths: auto
+      :align: left
 
-      * - Reference Data
+      * - :cpp:class:`ReferenceData <roq::ReferenceData>`
         - |checkmark|
-      * - Market Status
-        - (|checkmark|)
-      * - Top of Book
+        - |dagger|
+      * - :cpp:class:`MarketStatus <roq::MarketStatus>`
         - |checkmark|
-      * - Market by Price
+        - |dagger|
+      * - :cpp:class:`TopOfBook <roq::TopOfBook>`
         - |checkmark|
-      * - Market by Order
         -
-      * - Trade Summary
+      * - :cpp:class:`MarketByPrice <roq::MarketByPriceUpdate>`
         - |checkmark|
-      * - Statistics
+        -
+      * - :cpp:class:`MarketByOrder <roq::MarketByOrderUpdate>`
+        -
+        -
+      * - :cpp:class:`TradeSummary <roq::TradeSummary>`
         - |checkmark|
-      * - Time Series
+        -
+      * - :cpp:class:`Statistics <roq::StatisticsUpdate>`
+        - |checkmark|
+        -
+      * - :cpp:class:`TimeSeries <roq::TimeSeriesUpdate>`
+        -
         -
 
-  .. grid-item-card::  Order Management
+  .. grid-item-card::  Orders
 
     .. list-table::
       :widths: auto
+      :align: left
 
-      * - Create
+      * - :cpp:class:`CreateOrder <roq::CreateOrder>`
         - |checkmark|
-      * - Modify
+        -
+      * - :cpp:class:`ModifyOrder <roq::ModifyOrder>`
         - |checkmark|
-      * - Cancel
+        -
+      * - :cpp:class:`CancelOrder <roq::CancelOrder>`
         - |checkmark|
-      * - Cancel All
+        -
+      * - :cpp:class:`CancelAllOrders <roq::CancelAllOrders>`
         - |checkmark|
-      * - Auto-Cancel
-        - |checkmark|
+        -
 
-  .. grid-item-card::  Account Management
+  .. grid-item-card::  Account
 
     .. list-table::
       :widths: auto
+      :align: left
 
-      * - Positions
+      * - :cpp:class:`Funds <roq::FundsUpdate>`
         - |checkmark|
-      * - Funds
+        -
+      * - :cpp:class:`Position <roq::PositionUpdate>`
         - |checkmark|
+        -
+
+.. note::
+
+   |dagger| The exchange protocol does not support streaming updates for reference data and market status.
+
+
+Using
+-----
+
+.. code-block:: shell
+
+   $ roq-aster-futures [FLAGS]
 
 
 .. _roq-aster-futures-flags:
@@ -153,16 +176,14 @@ Environments
 Configuration
 -------------
 
-* :ref:`Gateway Config <gateway-config>`
-
 .. code-block:: shell
 
    $ $CONDA_PREFIX/share/roq-aster-futures/config.toml
 
 .. important::
 
-   The template will be replaced when the software is upgraded.
-   Make a copy and modify to your needs.
+   This template will be replaced when the software is upgraded.
+   Make a copy and modify to your own needs.
 
 .. include:: config.toml
    :code: toml
@@ -171,97 +192,30 @@ Configuration
 Market Data
 -----------
 
-.. tab:: Live
 
-  .. list-table::
-    :header-rows: 1
-    :widths: auto
+Trading Status
+~~~~~~~~~~~~~~
 
-    * - Event
-      - Stream
-      - Messages
-      - Comments
+.. list-table::
+  :header-rows: 1
+  :widths: auto
+  :align: left
 
-    * - :cpp:class:`roq::ReferenceData`
-      -
-      -
-      -
+  * - Enum
+    -
+    -
 
-    * - :cpp:class:`roq::MarketStatus`
-      -
-      -
-      -
+  * - :code:`TRADING`
+    - |right-double-arrow|
+    - :cpp:enumerator:`Open <roq::TradingStatus::OPEN>`
 
-    * - :cpp:class:`roq::TopOfBook`
-      - MarketData
-      - ticker
-      -
+  * - :code:`PENDING_TRADING`
+    - |right-double-arrow|
+    - :cpp:enumerator:`PreOpen <roq::TradingStatus::PRE_OPEN>`
 
-    * - :cpp:class:`roq::MarketByPriceUpdate`
-      - MarketData
-      - books
-      -
-
-    * - :cpp:class:`roq::MarketByOrderUpdate`
-      -
-      -
-      -
-
-    * - :cpp:class:`roq::TradeSummary`
-      - MarketData
-      - trade
-      -
-
-    * - :cpp:class:`roq::StatisticsUpdate`
-      - MarketData
-      - ticker
-      -
-
-.. tab:: Download
-
-  .. list-table::
-    :header-rows: 1
-    :widths: auto
-
-    * - Event
-      - Stream
-      - Messages
-      - Comments
-
-    * - :cpp:class:`roq::ReferenceData`
-      - Rest
-      - /api/spot/v1/public/currencies, /api/mix/v1/market/contracts
-      -
-
-    * - :cpp:class:`roq::MarketStatus`
-      -
-      -
-      -
-
-    * - :cpp:class:`roq::TopOfBook`
-      -
-      -
-      -
-
-    * - :cpp:class:`roq::MarketByPriceUpdate`
-      -
-      -
-      -
-
-    * - :cpp:class:`roq::MarketByOrderUpdate`
-      -
-      -
-      -
-
-    * - :cpp:class:`roq::TradeSummary`
-      -
-      -
-      -
-
-    * - :cpp:class:`roq::StatisticsUpdate`
-      -
-      -
-      -
+  * - :code:`SETTLING`
+    - |right-double-arrow|
+    - :cpp:enumerator:`Close <roq::TradingStatus::CLOSE>`
 
 
 Statistics
@@ -270,112 +224,84 @@ Statistics
 .. list-table::
   :header-rows: 1
   :widths: auto
+  :align: left
 
-  * - Type
-    - Comments
+  * - Event
+    - Field
+    - Comment
+    -
+    -
 
-  * - :cpp:class:`HIGHEST_TRADED_PRICE`
-    - (ticker) :code:`high24h`
+  * - :code:`MarkPriceUpdate`
+    - :code:`p`
+    - Mark price
+    - |right-double-arrow|
+    - :cpp:enumerator:`SettlementPrice <roq::StatisticsType::SETTLEMENT_PRICE>`
 
-  * - :cpp:class:`LOWEST_TRADED_PRICE`
-    - (ticker) :code:`low24h`
+  * - :code:`MarkPriceUpdate`
+    - :code:`P`
+    - Est. settle price
+    - |right-double-arrow|
+    - :cpp:enumerator:`PreSettlementPrice <roq::StatisticsType::PRE_SETTLEMENT_PRICE>`
 
-  * - :cpp:class:`TRADE_VOLUME`
-    - (ticker) :code:`quoteVolume`
+  * - :code:`MarkPriceUpdate`
+    - :code:`i`
+    - Index price
+    - |right-double-arrow|
+    - :cpp:enumerator:`IndexValue <roq::StatisticsType::INDEX_VALUE>`
+
+  * - :code:`MarkPriceUpdate`
+    - :code:`r`
+    - Funding rate
+    - |right-double-arrow|
+    - :cpp:enumerator:`FundingRate <roq::StatisticsType::FUNDING_RATE>`
+
+  * - :code:`MiniTicker`
+    - :code:`o`
+    - Open price
+    - |right-double-arrow|
+    - :cpp:enumerator:`OpenPrice <roq::StatisticsType::OPEN_PRICE>`
+
+  * - :code:`MiniTicker`
+    - :code:`h`
+    - High price
+    - |right-double-arrow|
+    - :cpp:enumerator:`HighestTradedPrice <roq::StatisticsType::HIGHEST_TRADED_PRICE>`
+
+  * - :code:`MiniTicker`
+    - :code:`l`
+    - Low price
+    - |right-double-arrow|
+    - :cpp:enumerator:`LowestTradedPrice <roq::StatisticsType::LOWEST_TRADED_PRICE>`
+
+  * - :code:`MiniTicker`
+    - :code:`c`
+    - Close price
+    - |right-double-arrow|
+    - :cpp:enumerator:`ClosePrice <roq::StatisticsType::CLOSE_PRICE>`
+
+  * - :code:`MiniTicker`
+    - :code:`v`
+    - Total volume (base)
+    - |right-double-arrow|
+    - :cpp:enumerator:`TradeVolume <roq::StatisticsType::TRADE_VOLUME>`
 
 
+Orders
+------
 
-Order Management
-----------------
 
-.. tab:: Live
+Position Effect
+~~~~~~~~~~~~~~~
 
-  .. list-table::
-    :header-rows: 1
-    :widths: auto
+TBD
 
-    * - Event
-      - Stream
-      - Messages
-      - Comments
 
-    * - :cpp:class:`roq::OrderUpdate`
-      -
-      -
-      -
+Margin Mode
+~~~~~~~~~~~
 
-    * - :cpp:class:`roq::TradeUpdate`
-      -
-      -
-      -
+TBD
 
-.. tab:: Download
-
-  .. list-table::
-    :header-rows: 1
-    :widths: auto
-
-    * - Event
-      - Stream
-      - Messages
-      - Comments
-
-    * - :cpp:class:`roq::OrderUpdate`
-      -
-      -
-      -
-
-    * - :cpp:class:`roq::TradeUpdate`
-      -
-      -
-      -
-
-.. tab:: Request
-
-  .. list-table::
-    :header-rows: 1
-    :widths: auto
-
-    * - Event
-      - Stream
-      - Messages
-      - Comments
-
-    * - :cpp:class:`roq::CreateOrder`
-      -
-      -
-      -
-
-    * - :cpp:class:`roq::ModifyOrder`
-      -
-      -
-      -
-
-    * - :cpp:class:`roq::CancelOrder`
-      -
-      -
-      -
-
-    * - :cpp:class:`roq::CancelAllOrders`
-      -
-      -
-      -
-
-.. tab:: Response
-
-  .. list-table::
-    :header-rows: 1
-    :widths: auto
-
-    * - Event
-      - Stream
-      - Messages
-      - Comments
-
-    * - :cpp:class:`roq::OrderAck`
-      -
-      -
-      -
 
 Order Types
 ~~~~~~~~~~~
@@ -389,110 +315,29 @@ Time in Force
 TBD
 
 
-Position Effect
-~~~~~~~~~~~~~~~
-
-TBD
-
-
 Execution Instructions
 ~~~~~~~~~~~~~~~~~~~~~~
 
 TBD
 
 
-Account Management
-------------------
+Order Status
+~~~~~~~~~~~~
 
-.. tab:: Live
-
-  .. list-table::
-    :header-rows: 1
-    :widths: auto
-
-    * - Event
-      - Stream
-      - Messages
-      - Comments
-
-    * - :cpp:class:`roq::PositionUpdate`
-      -
-      -
-      -
-
-    * - :cpp:class:`roq::FundsUpdate`
-      -
-      -
-      -
-
-.. tab:: Download
-
-  .. list-table::
-    :header-rows: 1
-    :widths: auto
-
-    * - Event
-      - Stream
-      - Messages
-      - Comments
-
-    * - :cpp:class:`roq::PositionUpdate`
-      -
-      -
-      -
-
-    * - :cpp:class:`roq::FundsUpdate`
-      -
-      -
-      -
+TBD
 
 
-Streams
--------
+Cancel-All
+~~~~~~~~~~
 
-.. tab:: Rest
-
-  .. list-table::
-    :header-rows: 1
-    :widths: auto
-
-    * - Type
-      - Comments
-
-    * - REST
-      - Primary purpose
-
-        * discover the full list of symbols
-
-.. tab:: MarketData
-
-  .. list-table::
-    :header-rows: 1
-    :widths: auto
-
-    * - Type
-      - Comments
-
-    * - WebSocket
-      - Primary purpose
-
-        * live market data
-
-        Each connection
-
-        * supports a slice of the symbols
-
-
-
-Constraints
------------
-
-* There is no live update of reference data or trading status
-* Stop orders are not supported
+TBD
 
 
 Comments
 --------
+
+* The exchange supports auto-cancel on disconnect.
+  This can be enabled using the flags.
 
 
 References

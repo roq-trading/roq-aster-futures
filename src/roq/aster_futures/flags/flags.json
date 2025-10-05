@@ -8,12 +8,6 @@
       "required": true,
       "default": "aster_futures",
       "description": "Exchange identifier"
-    },
-    {
-      "name": "api",
-      "type": "std/string",
-      "required": true,
-      "description": "API (:code:`SPOT`, :code:`MARGIN`, :code:`USD-M`, :code:`COIN-M`)"
     }
   ]
 }
