@@ -14,7 +14,7 @@
       "name": "ping_freq",
       "type": "std/nanoseconds",
       "validator": "roq/flags/validators/TimePeriod",
-      "default": "15s",
+      "default": "5s",
       "description": "Ping frequency"
     },
     {

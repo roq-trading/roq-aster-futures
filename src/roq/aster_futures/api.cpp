@@ -35,7 +35,10 @@ API API::create(Settings const &settings) {
     return {
         .category = category,
         .inst_type = inst_type,
-        .market_data{.products = "/public/products"},
+        .market_data{
+            .exchange_info = "/fapi/v1/exchangeInfo"sv,
+            .depth = "/fapi/v1/depth"sv,
+        },
         .order_management{
             .account_info = "/api/v3/account/settings"sv,
             .account_assets = "/api/v3/account/assets"sv,

@@ -3,19 +3,13 @@
   "type": "enum",
   "values": [
     {
-      "name": "listed"
+      "name": "TRADING"
     },
     {
-      "name": "online"
+      "name": "PENDING_TRADING"
     },
     {
-      "name": "limit_open"
-    },
-    {
-      "name": "offline"
-    },
-    {
-      "name": "restrictedAPI"
+      "name": "SETTLING"
     }
   ]
 }

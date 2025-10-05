@@ -3,7 +3,7 @@
   "type": "enum",
   "values": [
     {
-      "name": "products"
+      "name": "exchange_info"
     },
     {
       "name": "done"

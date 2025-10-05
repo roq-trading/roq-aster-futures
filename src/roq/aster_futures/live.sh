@@ -8,17 +8,17 @@ else
   PREFIX=
 fi
 
-NAME="aster_futures"
+NAME="aster-futures"
 
 CONFIG="${CONFIG:-$NAME}"
 
-CONFIG_FILE="$ROQ_CONFIG_PATH/roq-aster_futures/$CONFIG.toml"
+CONFIG_FILE="$ROQ_CONFIG_PATH/roq-aster-futures/$CONFIG.toml"
 
 FLAGFILE="../../../share/flags/prod/flags.cfg"
 
 API="USD-M"
 
-$PREFIX ./roq-aster_futures \
+$PREFIX ./roq-aster-futures \
   --name "$NAME" \
   --config_file "$CONFIG_FILE" \
   --flagfile "$FLAGFILE" \

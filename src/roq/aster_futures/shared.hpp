@@ -10,11 +10,15 @@
 #include "roq/api.hpp"
 #include "roq/server.hpp"
 
+#include "roq/utils/container.hpp"
+
 #include "roq/core/symbols.hpp"
+#include "roq/core/timer_queue.hpp"
 
 #include "roq/core/limit/rate_limiter.hpp"
 
 #include "roq/aster_futures/api.hpp"
+#include "roq/aster_futures/instrument.hpp"
 #include "roq/aster_futures/settings.hpp"
 
 namespace roq {
@@ -50,6 +54,16 @@ struct Shared final {
   API const api;
   core::limit::RateLimiter rate_limiter;
   core::Symbols symbols;
+
+ public:
+  // instrument
+  Instrument &get_instrument(std::string_view const &symbol);
+
+ private:
+  utils::unordered_map<std::string, Instrument> instruments_;
+
+ public:
+  core::TimerQueue<std::string> depth_request_queue;
 };
 
 }  // namespace aster_futures

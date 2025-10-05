@@ -178,6 +178,32 @@ std::optional<roq::SecurityType> Map<aster_futures::json::Category, aster_future
   return Helper{args_};
 }
 
+// aster_futures::json::ContractType => roq::SecurityType
+
+template <>
+template <>
+constexpr Helper<aster_futures::json::ContractType>::operator std::optional<roq::SecurityType>() const {
+  switch (std::get<0>(args_)) {
+    using enum aster_futures::json::ContractType::type_t;
+    case UNDEFINED_INTERNAL:
+      return roq::SecurityType::UNDEFINED;
+    case UNKNOWN_INTERNAL:
+      return roq::SecurityType::UNDEFINED;
+    case PERPETUAL:
+      return roq::SecurityType::FUTURES;
+  }
+  return {};
+}
+
+static_assert(Helper{aster_futures::json::ContractType{aster_futures::json::ContractType::UNDEFINED_INTERNAL}} == roq::SecurityType::UNDEFINED);
+static_assert(Helper{aster_futures::json::ContractType{aster_futures::json::ContractType::PERPETUAL}} == roq::SecurityType::FUTURES);
+
+template <>
+template <>
+std::optional<roq::SecurityType> Map<aster_futures::json::ContractType>::helper() const {
+  return Helper{args_};
+}
+
 // aster_futures::json::MarginMode => roq::MarginMode
 
 template <>
@@ -580,26 +606,20 @@ constexpr Helper<aster_futures::json::TradingStatus>::operator std::optional<roq
       return roq::TradingStatus::UNDEFINED;
     case UNKNOWN_INTERNAL:
       return roq::TradingStatus::UNDEFINED;
-    case LISTED:
-      return roq::TradingStatus::UNDEFINED;
-    case ONLINE:
+    case TRADING:
       return roq::TradingStatus::OPEN;
-    case LIMIT_OPEN:
+    case PENDING_TRADING:
       return roq::TradingStatus::PRE_OPEN;
-    case OFFLINE:
+    case SETTLING:
       return roq::TradingStatus::CLOSE;
-    case RESTRICTED_API:
-      return roq::TradingStatus::HALT;
   }
   return {};
 }
 
 static_assert(Helper{aster_futures::json::TradingStatus{aster_futures::json::TradingStatus::UNDEFINED_INTERNAL}} == roq::TradingStatus::UNDEFINED);
-static_assert(Helper{aster_futures::json::TradingStatus{aster_futures::json::TradingStatus::LISTED}} == roq::TradingStatus::UNDEFINED);
-static_assert(Helper{aster_futures::json::TradingStatus{aster_futures::json::TradingStatus::ONLINE}} == roq::TradingStatus::OPEN);
-static_assert(Helper{aster_futures::json::TradingStatus{aster_futures::json::TradingStatus::LIMIT_OPEN}} == roq::TradingStatus::PRE_OPEN);
-static_assert(Helper{aster_futures::json::TradingStatus{aster_futures::json::TradingStatus::OFFLINE}} == roq::TradingStatus::CLOSE);
-static_assert(Helper{aster_futures::json::TradingStatus{aster_futures::json::TradingStatus::RESTRICTED_API}} == roq::TradingStatus::HALT);
+static_assert(Helper{aster_futures::json::TradingStatus{aster_futures::json::TradingStatus::TRADING}} == roq::TradingStatus::OPEN);
+static_assert(Helper{aster_futures::json::TradingStatus{aster_futures::json::TradingStatus::PENDING_TRADING}} == roq::TradingStatus::PRE_OPEN);
+static_assert(Helper{aster_futures::json::TradingStatus{aster_futures::json::TradingStatus::SETTLING}} == roq::TradingStatus::CLOSE);
 
 template <>
 template <>

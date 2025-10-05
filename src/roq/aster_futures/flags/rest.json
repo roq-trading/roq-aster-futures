@@ -7,7 +7,7 @@
       "name": "uri",
       "type": "roq/io/web/URI",
       "validator": "roq/core/flags/URI",
-      "default": "https://fapi.asterdex.com/fapi/",
+      "default": "https://fapi.asterdex.com",
       "description": "Exchange end-point"
     },
     {
@@ -27,7 +27,7 @@
       "name": "ping_path",
       "type": "std/string",
       "validator": "roq/flags/validators/Path",
-      "default": "/public/time",
+      "default": "/fapi/v1/ping",
       "description": "Ping path"
     },
     {
@@ -70,13 +70,6 @@
       "validator": "roq/flags/validators/TimePeriod",
       "default": "24h",
       "description": "Download fills since (now - begin)"
-    },
-    {
-      "name": "token_refresh_freq",
-      "type": "std/nanoseconds",
-      "validator": "roq/flags/validators/TimePeriod",
-      "default": "8h",
-      "description": "Token refresh frequency"
     },
     {
       "name": "cancel_on_disconnect",

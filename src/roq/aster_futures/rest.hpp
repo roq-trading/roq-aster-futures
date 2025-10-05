@@ -24,7 +24,8 @@
 #include "roq/aster_futures/rest_state.hpp"
 #include "roq/aster_futures/shared.hpp"
 
-#include "roq/aster_futures/json/products.hpp"
+#include "roq/aster_futures/json/depth.hpp"
+#include "roq/aster_futures/json/exchange_info.hpp"
 
 namespace roq {
 namespace aster_futures {
@@ -65,9 +66,15 @@ class Rest final : public web::rest::Client::Handler {
 
   uint32_t download(RestState);
 
-  void get_products();
-  void get_products_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<json::Products> const &);
+  void get_exchange_info();
+  void get_exchange_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
+  void operator()(Trace<json::ExchangeInfo> const &);
+
+  void get_depth(std::string_view const &symbol);
+  void get_depth_ack(Trace<web::rest::Response> const &, std::string_view const &symbol);
+  void operator()(Trace<json::Depth> const &, std::string_view const &symbol);
+
+  void check_request_queue(std::chrono::nanoseconds now);
 
   void process_response(web::rest::Response const &, auto error_handler, auto success_handler);
 
@@ -85,7 +92,7 @@ class Rest final : public web::rest::Client::Handler {
     utils::metrics::Counter disconnect;
   } counter_;
   struct {
-    utils::metrics::Profile products, products_ack;
+    utils::metrics::Profile exchange_info, exchange_info_ack, depth, depth_ack;
   } profile_;
   struct {
     utils::metrics::Latency ping;

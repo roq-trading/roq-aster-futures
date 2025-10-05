@@ -9,6 +9,7 @@ set(SOURCES
     config.cpp
     drop_copy.cpp
     gateway.cpp
+    instrument.cpp
     market_data.cpp
     order_entry.cpp
     rest.cpp

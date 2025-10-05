@@ -128,6 +128,10 @@ Flags
 
    .. include:: flags/ws.rstinc
 
+.. tab:: MBP
+
+   .. include:: flags/mbp.rstinc
+
 .. tab:: Misc
 
    .. include:: flags/misc.rstinc
@@ -507,3 +511,4 @@ Exchange
 
 * `Website <https://www.asterdex.com/>`__
 * `Documentation <https://docs.asterdex.com/>`__
+* `Documentation <https://github.com/asterdex/api-docs/blob/master/aster-finance-futures-api-v3.md/>`__

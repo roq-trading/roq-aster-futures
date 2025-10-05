@@ -1,13 +1,13 @@
 {
-  "name": "roq/aster_futures/json/BookDataItem",
+  "name": "roq/aster_futures/json/DepthUpdateItem",
   "type": "by_index",
   "values": [
     {
-      "name": "price_ep",
+      "name": "price",
       "type": "std/double"
     },
     {
-      "name": "qty",
+      "name": "quantity",
       "type": "std/double"
     }
   ]

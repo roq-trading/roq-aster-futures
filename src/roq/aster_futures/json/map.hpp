@@ -18,6 +18,7 @@
 #include "roq/aster_futures/json/action.hpp"
 #include "roq/aster_futures/json/asset_mode.hpp"
 #include "roq/aster_futures/json/category.hpp"
+#include "roq/aster_futures/json/contract_type.hpp"
 #include "roq/aster_futures/json/futures_type.hpp"
 #include "roq/aster_futures/json/margin_mode.hpp"
 #include "roq/aster_futures/json/message_type.hpp"
@@ -45,6 +46,10 @@ std::optional<MarginMode> Map<aster_futures::json::AssetMode>::helper() const;
 template <>
 template <>
 std::optional<SecurityType> Map<aster_futures::json::Category, aster_futures::json::FuturesType>::helper() const;
+
+template <>
+template <>
+std::optional<SecurityType> Map<aster_futures::json::ContractType>::helper() const;
 
 template <>
 template <>

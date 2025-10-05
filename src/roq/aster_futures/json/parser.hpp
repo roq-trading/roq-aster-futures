@@ -9,13 +9,15 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/aster_futures/json/ack.hpp"
-#include "roq/aster_futures/json/pong.hpp"
+#include "roq/aster_futures/json/ack.hpp"   // ???
+#include "roq/aster_futures/json/pong.hpp"  // ???
 
-#include "roq/aster_futures/json/book.hpp"
-#include "roq/aster_futures/json/kline.hpp"
-#include "roq/aster_futures/json/market24h.hpp"
-#include "roq/aster_futures/json/trades.hpp"
+#include "roq/aster_futures/json/agg_trade.hpp"
+#include "roq/aster_futures/json/book_ticker.hpp"
+#include "roq/aster_futures/json/depth_update.hpp"
+#include "roq/aster_futures/json/mark_price_update.hpp"
+#include "roq/aster_futures/json/mini_ticker.hpp"
+#include "roq/aster_futures/json/ticker.hpp"
 
 #include "roq/aster_futures/json/login.hpp"
 
@@ -33,10 +35,12 @@ struct Parser final {
     virtual void operator()(Trace<json::Pong> const &) = 0;
     virtual void operator()(Trace<json::Ack> const &) = 0;
     //
-    virtual void operator()(Trace<json::Book> const &) = 0;
-    virtual void operator()(Trace<json::Trades> const &) = 0;
-    virtual void operator()(Trace<json::Market24h> const &) = 0;
-    virtual void operator()(Trace<json::Kline> const &) = 0;
+    virtual void operator()(Trace<json::AggTrade> const &) = 0;
+    virtual void operator()(Trace<json::MarkPriceUpdate> const &) = 0;
+    virtual void operator()(Trace<json::MiniTicker> const &) = 0;
+    virtual void operator()(Trace<json::Ticker> const &) = 0;
+    virtual void operator()(Trace<json::BookTicker> const &) = 0;
+    virtual void operator()(Trace<json::DepthUpdate> const &) = 0;
     //
     virtual void operator()(Trace<json::Login> const &) = 0;
     virtual void operator()(Trace<json::Account> const &) = 0;

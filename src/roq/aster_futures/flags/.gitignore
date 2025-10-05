@@ -1,13 +1,16 @@
 !!! THIS FILE HAS BEEN AUTO-GENERATED !!!
 roq-aster-futures-flags
+mbp.rstinc
 misc.rstinc
 rest.rstinc
 ws.rstinc
 flags.rstinc
+mbp.hpp
 misc.hpp
 rest.hpp
 ws.hpp
 flags.hpp
+mbp.cpp
 misc.cpp
 rest.cpp
 ws.cpp

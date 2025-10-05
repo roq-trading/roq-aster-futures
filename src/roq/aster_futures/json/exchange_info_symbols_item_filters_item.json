@@ -1,0 +1,62 @@
+{
+  "name": "roq/aster_futures/json/ExchangeInfoSymbolsItemFiltersItem",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "filterType",
+      "type": "roq/aster_futures/json/FilterType"
+    },
+    {
+      "name": "minPrice",
+      "type": "std/double"
+    },
+    {
+      "name": "maxPrice",
+      "type": "std/double"
+    },
+    {
+      "name": "tickSize",
+      "type": "std/double"
+    },
+    {
+      "name": "stepSize",
+      "type": "std/double"
+    },
+    {
+      "name": "maxQty",
+      "type": "std/double"
+    },
+    {
+      "name": "minQty",
+      "type": "std/double"
+    },
+    {
+      "name": "limit",
+      "type": "std/double"
+    },
+    {
+      "name": "notional",
+      "type": "std/double"
+    },
+    {
+      "name": "multiplierDown",
+      "type": "std/double"
+    },
+    {
+      "name": "multiplierUp",
+      "type": "std/double"
+    },
+    {
+      "name": "ltMultiplierDown",
+      "type": "std/double"
+    },
+    {
+      "name": "ltMultiplierUp",
+      "type": "std/double"
+    },
+    {
+      "name": "multiplierDecimal",
+      "type": "std/double"
+    }
+  ]
+}

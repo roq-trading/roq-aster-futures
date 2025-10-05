@@ -241,19 +241,27 @@ void DropCopy::operator()(Trace<json::Ack> const &event) {
   log::warn("DEBUG ack={}"sv, ack);
 }
 
-void DropCopy::operator()(Trace<json::Book> const &) {
+void DropCopy::operator()(Trace<json::AggTrade> const &) {
   log::fatal("Unexpected"sv);
 }
 
-void DropCopy::operator()(Trace<json::Trades> const &) {
+void DropCopy::operator()(Trace<json::MarkPriceUpdate> const &) {
   log::fatal("Unexpected"sv);
 }
 
-void DropCopy::operator()(Trace<json::Market24h> const &) {
+void DropCopy::operator()(Trace<json::MiniTicker> const &) {
   log::fatal("Unexpected"sv);
 }
 
-void DropCopy::operator()(Trace<json::Kline> const &) {
+void DropCopy::operator()(Trace<json::Ticker> const &) {
+  log::fatal("Unexpected"sv);
+}
+
+void DropCopy::operator()(Trace<json::BookTicker> const &) {
+  log::fatal("Unexpected"sv);
+}
+
+void DropCopy::operator()(Trace<json::DepthUpdate> const &) {
   log::fatal("Unexpected"sv);
 }
 
