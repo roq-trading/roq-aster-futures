@@ -2,10 +2,15 @@
 
 .. |dagger| unicode:: U+2020
 .. |double-dagger| unicode:: U+2021
-.. |checkmark| unicode:: U+2713
 .. |right-arrow| unicode:: U+2192
 .. |right-double-arrow| unicode:: U+21D2
 .. |left-right-double-arrow| unicode:: U+21D4
+.. |check-mark| unicode:: U+2705
+.. |cross-mark| unicode:: U+274C
+.. |negative-cross-mark| unicode:: U+274E
+.. |footnote-1| unicode:: U+2776
+.. |footnote-2| unicode:: U+2777
+.. |footnote-3| unicode:: U+2778
 
 
 roq-aster-futures
@@ -42,16 +47,16 @@ Supports
       :align: left
 
       * - :cpp:enumerator:`Spot <roq::SecurityType::SPOT>`
-        -
+        - |cross-mark|
         -
       * - :cpp:enumerator:`Futures <roq::SecurityType::FUTURES>`
-        -
+        - |cross-mark|
         -
       * - :cpp:enumerator:`Swap <roq::SecurityType::SWAP>`
-        - |checkmark|
+        - |check-mark|
         -
       * - :cpp:enumerator:`Option <roq::SecurityType::OPTION>`
-        -
+        - |cross-mark|
         -
 
   .. grid-item-card::  Market Data
@@ -61,47 +66,53 @@ Supports
       :align: left
 
       * - :cpp:class:`ReferenceData <roq::ReferenceData>`
-        - |checkmark|
-        - |dagger|
+        - |check-mark|
+        - |footnote-1|
       * - :cpp:class:`MarketStatus <roq::MarketStatus>`
-        - |checkmark|
-        - |dagger|
+        - |check-mark|
+        - |footnote-1|
       * - :cpp:class:`TopOfBook <roq::TopOfBook>`
-        - |checkmark|
+        - |check-mark|
         -
       * - :cpp:class:`MarketByPrice <roq::MarketByPriceUpdate>`
-        - |checkmark|
+        - |check-mark|
         -
       * - :cpp:class:`MarketByOrder <roq::MarketByOrderUpdate>`
-        -
+        - |cross-mark|
         -
       * - :cpp:class:`TradeSummary <roq::TradeSummary>`
-        - |checkmark|
+        - |check-mark|
         -
       * - :cpp:class:`Statistics <roq::StatisticsUpdate>`
-        - |checkmark|
+        - |check-mark|
         -
       * - :cpp:class:`TimeSeries <roq::TimeSeriesUpdate>`
-        -
+        - |cross-mark|
         -
 
-  .. grid-item-card::  Orders
+  .. grid-item-card::  Orders & Quotes
 
     .. list-table::
       :widths: auto
       :align: left
 
       * - :cpp:class:`CreateOrder <roq::CreateOrder>`
-        - |checkmark|
+        - |negative-cross-mark|
         -
       * - :cpp:class:`ModifyOrder <roq::ModifyOrder>`
-        - |checkmark|
+        - |cross-mark|
         -
       * - :cpp:class:`CancelOrder <roq::CancelOrder>`
-        - |checkmark|
+        - |negative-cross-mark|
         -
       * - :cpp:class:`CancelAllOrders <roq::CancelAllOrders>`
-        - |checkmark|
+        - |negative-cross-mark|
+        -
+      * - :cpp:class:`MassQuote <roq::MassQuote>`
+        - |cross-mark|
+        -
+      * - :cpp:class:`CancelQuotes <roq::CancelQuotes>`
+        - |cross-mark|
         -
 
   .. grid-item-card::  Account
@@ -111,15 +122,21 @@ Supports
       :align: left
 
       * - :cpp:class:`Funds <roq::FundsUpdate>`
-        - |checkmark|
+        - |negative-cross-mark|
         -
       * - :cpp:class:`Position <roq::PositionUpdate>`
-        - |checkmark|
+        - |negative-cross-mark|
         -
 
 .. note::
 
-   |dagger| The exchange protocol does not support streaming updates for reference data and market status.
+   |check-mark| = Available.
+
+   |negative-cross-mark| = Not implemented.
+
+   |cross-mark| = Unavailable.
+
+   |footnote-1| The exchange protocol does not support streaming updates for reference data and market status.
 
 
 Using
@@ -193,144 +210,111 @@ Market Data
 -----------
 
 
-Trading Status
-~~~~~~~~~~~~~~
+Inbound
+~~~~~~~
 
-.. list-table::
-  :header-rows: 1
-  :widths: auto
-  :align: left
+.. tab:: TradingStatus
 
-  * - Enum
-    -
-    -
+   .. list-table::
+     :header-rows: 1
+     :widths: auto
+     :align: left
 
-  * - :code:`TRADING`
-    - |right-double-arrow|
-    - :cpp:enumerator:`Open <roq::TradingStatus::OPEN>`
+     * - Enum
+       -
+       -
 
-  * - :code:`PENDING_TRADING`
-    - |right-double-arrow|
-    - :cpp:enumerator:`PreOpen <roq::TradingStatus::PRE_OPEN>`
+     * - :code:`TRADING`
+       - |right-double-arrow|
+       - :cpp:enumerator:`OPEN <roq::TradingStatus::OPEN>`
 
-  * - :code:`SETTLING`
-    - |right-double-arrow|
-    - :cpp:enumerator:`Close <roq::TradingStatus::CLOSE>`
+     * - :code:`PENDING_TRADING`
+       - |right-double-arrow|
+       - :cpp:enumerator:`PRE_OPEN <roq::TradingStatus::PRE_OPEN>`
 
-
-Statistics
-~~~~~~~~~~
-
-.. list-table::
-  :header-rows: 1
-  :widths: auto
-  :align: left
-
-  * - Event
-    - Field
-    - Comment
-    -
-    -
-
-  * - :code:`MarkPriceUpdate`
-    - :code:`p`
-    - Mark price
-    - |right-double-arrow|
-    - :cpp:enumerator:`SettlementPrice <roq::StatisticsType::SETTLEMENT_PRICE>`
-
-  * - :code:`MarkPriceUpdate`
-    - :code:`P`
-    - Est. settle price
-    - |right-double-arrow|
-    - :cpp:enumerator:`PreSettlementPrice <roq::StatisticsType::PRE_SETTLEMENT_PRICE>`
-
-  * - :code:`MarkPriceUpdate`
-    - :code:`i`
-    - Index price
-    - |right-double-arrow|
-    - :cpp:enumerator:`IndexValue <roq::StatisticsType::INDEX_VALUE>`
-
-  * - :code:`MarkPriceUpdate`
-    - :code:`r`
-    - Funding rate
-    - |right-double-arrow|
-    - :cpp:enumerator:`FundingRate <roq::StatisticsType::FUNDING_RATE>`
-
-  * - :code:`MiniTicker`
-    - :code:`o`
-    - Open price
-    - |right-double-arrow|
-    - :cpp:enumerator:`OpenPrice <roq::StatisticsType::OPEN_PRICE>`
-
-  * - :code:`MiniTicker`
-    - :code:`h`
-    - High price
-    - |right-double-arrow|
-    - :cpp:enumerator:`HighestTradedPrice <roq::StatisticsType::HIGHEST_TRADED_PRICE>`
-
-  * - :code:`MiniTicker`
-    - :code:`l`
-    - Low price
-    - |right-double-arrow|
-    - :cpp:enumerator:`LowestTradedPrice <roq::StatisticsType::LOWEST_TRADED_PRICE>`
-
-  * - :code:`MiniTicker`
-    - :code:`c`
-    - Close price
-    - |right-double-arrow|
-    - :cpp:enumerator:`ClosePrice <roq::StatisticsType::CLOSE_PRICE>`
-
-  * - :code:`MiniTicker`
-    - :code:`v`
-    - Total volume (base)
-    - |right-double-arrow|
-    - :cpp:enumerator:`TradeVolume <roq::StatisticsType::TRADE_VOLUME>`
+     * - :code:`SETTLING`
+       - |right-double-arrow|
+       - :cpp:enumerator:`CLOSE <roq::TradingStatus::CLOSE>`
 
 
-Orders
-------
+.. tab:: StatisticsType
+
+   .. list-table::
+     :header-rows: 1
+     :widths: auto
+     :align: left
+
+     * - Event
+       - Field
+       - Comment
+       -
+       -
+
+     * - :code:`MarkPriceUpdate`
+       - :code:`p`
+       - Mark price
+       - |right-double-arrow|
+       - :cpp:enumerator:`SETTLEMENT_PRICE <roq::StatisticsType::SETTLEMENT_PRICE>`
+
+     * - :code:`MarkPriceUpdate`
+       - :code:`P`
+       - Est. settle price
+       - |right-double-arrow|
+       - :cpp:enumerator:`PRE_SETTLEMENT_PRICE <roq::StatisticsType::PRE_SETTLEMENT_PRICE>`
+
+     * - :code:`MarkPriceUpdate`
+       - :code:`i`
+       - Index price
+       - |right-double-arrow|
+       - :cpp:enumerator:`INDEX_VALUE <roq::StatisticsType::INDEX_VALUE>`
+
+     * - :code:`MarkPriceUpdate`
+       - :code:`r`
+       - Funding rate
+       - |right-double-arrow|
+       - :cpp:enumerator:`FUNDING_RATE <roq::StatisticsType::FUNDING_RATE>`
+
+     * - :code:`MiniTicker`
+       - :code:`o`
+       - Open price
+       - |right-double-arrow|
+       - :cpp:enumerator:`OPEN_PRICE <roq::StatisticsType::OPEN_PRICE>`
+
+     * - :code:`MiniTicker`
+       - :code:`h`
+       - High price
+       - |right-double-arrow|
+       - :cpp:enumerator:`HIGHEST_TRADED_PRICE <roq::StatisticsType::HIGHEST_TRADED_PRICE>`
+
+     * - :code:`MiniTicker`
+       - :code:`l`
+       - Low price
+       - |right-double-arrow|
+       - :cpp:enumerator:`LOWEST_TRADED_PRICE <roq::StatisticsType::LOWEST_TRADED_PRICE>`
+
+     * - :code:`MiniTicker`
+       - :code:`c`
+       - Close price
+       - |right-double-arrow|
+       - :cpp:enumerator:`CLOSE_PRICE <roq::StatisticsType::CLOSE_PRICE>`
+
+     * - :code:`MiniTicker`
+       - :code:`v`
+       - Total volume (base)
+       - |right-double-arrow|
+       - :cpp:enumerator:`TRADE_VOLUME <roq::StatisticsType::TRADE_VOLUME>`
 
 
-Position Effect
-~~~~~~~~~~~~~~~
-
-TBD
+Order Management
+----------------
 
 
-Margin Mode
-~~~~~~~~~~~
-
-TBD
+Inbound
+~~~~~~~
 
 
-Order Types
-~~~~~~~~~~~
-
-TBD
-
-
-Time in Force
-~~~~~~~~~~~~~
-
-TBD
-
-
-Execution Instructions
-~~~~~~~~~~~~~~~~~~~~~~
-
-TBD
-
-
-Order Status
-~~~~~~~~~~~~
-
-TBD
-
-
-Cancel-All
-~~~~~~~~~~
-
-TBD
+Outbound
+~~~~~~~~
 
 
 Comments
@@ -343,6 +327,7 @@ Comments
 References
 ----------
 
+
 Common
 ~~~~~~
 
@@ -350,6 +335,7 @@ Common
 * :ref:`Using Flags <abseil-cpp>`
 * :ref:`Gateway Flags <gateway-flags>`
 * :ref:`Gateway Config <gateway-config>`
+
 
 Exchange
 ~~~~~~~~
