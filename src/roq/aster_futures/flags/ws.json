@@ -25,10 +25,30 @@
       "description": "Request timeout"
     },
     {
+      "name": "request_limit",
+      "type": "std/uint32",
+      "default": "5",
+      "description": "Request limit per interval"
+    },
+    {
+      "name": "request_limit_interval",
+      "type": "std/nanoseconds",
+      "validator": "roq/flags/validators/TimePeriod",
+      "default": "1s",
+      "description": "Request limit monitor interval"
+    },
+    {
+      "name": "request_delay",
+      "type": "std/nanoseconds",
+      "validator": "roq/flags/validators/TimePeriod",
+      "default": "1s",
+      "description": "Request timeout"
+    },
+    {
       "name": "max_subscriptions_per_stream",
       "type": "std/uint32",
       "required": true,
-      "default": 100,
+      "default": 30,
       "description": "Maximum number of symbols per connection"
     },
     {

@@ -118,6 +118,10 @@
     {
       "name": "timeInForce",
       "comment": "array"
+    },
+    {
+      "name": "createTime",
+      "type": "std/milliseconds"
     }
   ]
 }

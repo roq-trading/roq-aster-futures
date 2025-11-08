@@ -99,7 +99,8 @@ MarketData::MarketData(Handler &handler, io::Context &context, uint16_t stream_i
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
       },
-      shared_{shared} {
+      shared_{shared}, rate_limiter_{shared_.settings.ws.request_limit, shared_.settings.ws.request_limit_interval},
+      request_queue_{shared_.settings.ws.request_delay} {
 }
 
 void MarketData::operator()(Event<Start> const &) {
@@ -118,6 +119,7 @@ void MarketData::operator()(Event<Timer> const &event) {
       next_ping_ = now + shared_.settings.ws.ping_freq;
       ping(now);
     }
+    check_request_queue(now);
   }
 }
 
@@ -151,6 +153,7 @@ void MarketData::operator()(web::socket::Client::Connected const &) {
 void MarketData::operator()(web::socket::Client::Disconnected const &) {
   ++counter_.disconnect;
   (*this)(ConnectionStatus::DISCONNECTED);
+  request_queue_.clear();
 }
 
 void MarketData::operator()(web::socket::Client::Ready const &) {
@@ -247,8 +250,17 @@ void MarketData::subscribe(std::span<Symbol const> const &symbols, std::span<std
         ++request_id_,
         symbol,
         fmt::join(streams, separator));
-    (*connection_).send_text(message);
+    request_queue_.emplace_back(std::move(message));
   }
+}
+
+void MarketData::check_request_queue(std::chrono::nanoseconds now) {
+  auto can_request = [&](auto now) { return rate_limiter_.can_request(now); };
+  auto request = [&](auto &message) {
+    log::debug("{}"sv, message);
+    (*connection_).send_text(message);
+  };
+  request_queue_.dispatch(can_request, request, now);
 }
 
 void MarketData::parse(std::string_view const &message) {

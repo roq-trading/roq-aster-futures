@@ -12,6 +12,10 @@
 #include "roq/utils/metrics/latency.hpp"
 #include "roq/utils/metrics/profile.hpp"
 
+#include "roq/core/timer_queue.hpp"
+
+#include "roq/core/limit/rate_limiter.hpp"
+
 #include "roq/io/context.hpp"
 
 #include "roq/web/socket/client.hpp"
@@ -72,6 +76,8 @@ class MarketData final : public web::socket::Client::Handler, public json::Parse
   void subscribe(std::span<Symbol const> const &symbols);
   void subscribe(std::span<Symbol const> const &symbols, std::span<std::string_view const> const &streams);
 
+  void check_request_queue(std::chrono::nanoseconds now);
+
   void parse(std::string_view const &message);
 
   void operator()(Trace<json::Pong> const &) override;
@@ -116,6 +122,9 @@ class MarketData final : public web::socket::Client::Handler, public json::Parse
   ConnectionStatus status_ = {};
   std::chrono::nanoseconds next_ping_ = {};
   uint32_t request_id_ = {};
+  // throttle
+  core::limit::RateLimiter rate_limiter_;
+  core::TimerQueue<std::string> request_queue_;
 };
 
 }  // namespace aster_futures
