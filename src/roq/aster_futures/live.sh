@@ -16,8 +16,6 @@ CONFIG_FILE="$ROQ_CONFIG_PATH/roq-aster-futures/$CONFIG.toml"
 
 FLAGFILE="../../../share/flags/prod/flags.cfg"
 
-API="USD-M"
-
 $PREFIX ./roq-aster-futures \
   --name "$NAME" \
   --config_file "$CONFIG_FILE" \
@@ -26,5 +24,4 @@ $PREFIX ./roq-aster-futures \
   --event_log_dir "$HOME/var/lib/roq/data" \
   --client_listen_address "$HOME/run/$NAME.sock" \
   --service_listen_address "$HOME/run/metrics/${NAME}.sock" \
-  --api "$API" \
   $@
