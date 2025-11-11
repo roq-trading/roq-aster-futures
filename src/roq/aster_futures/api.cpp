@@ -11,7 +11,7 @@ namespace aster_futures {
 
 // === IMPLEMENTATION ===
 
-API API::create(Settings const &settings) {
+API API::create(Settings const &) {
   return {
       .category = {},
       .inst_type = {},

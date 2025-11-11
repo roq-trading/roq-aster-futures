@@ -115,10 +115,6 @@ void MarketData::operator()(Event<Timer> const &event) {
   auto now = event.value.now;
   (*connection_).refresh(now);
   if (ready()) {
-    if (next_ping_ < now) {
-      next_ping_ = now + shared_.settings.ws.ping_freq;
-      ping(now);
-    }
     check_request_queue(now);
   }
 }
@@ -203,19 +199,6 @@ void MarketData::operator()(ConnectionStatus status) {
     log::info("stream_status={}"sv, stream_status);
     create_trace_and_dispatch(handler_, trace_info, stream_status);
   }
-}
-
-void MarketData::ping(std::chrono::nanoseconds now) {
-  /*
-  auto message = fmt::format(
-      R"({{)"
-      R"("id":{},)"
-      R"("method":"server.ping",)"
-      R"("params":[])"
-      R"(}})"sv,
-      std::chrono::duration_cast<std::chrono::milliseconds>(now).count());
-  (*connection_).send_text(message);
-  */
 }
 
 void MarketData::subscribe(std::span<Symbol const> const &symbols) {

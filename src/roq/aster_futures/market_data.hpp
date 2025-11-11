@@ -71,8 +71,6 @@ class MarketData final : public web::socket::Client::Handler, public json::Parse
  private:
   void operator()(ConnectionStatus);
 
-  void ping(std::chrono::nanoseconds now);
-
   void subscribe(std::span<Symbol const> const &symbols);
   void subscribe(std::span<Symbol const> const &symbols, std::span<std::string_view const> const &streams);
 
@@ -120,7 +118,6 @@ class MarketData final : public web::socket::Client::Handler, public json::Parse
   Shared &shared_;
   // state
   ConnectionStatus status_ = {};
-  std::chrono::nanoseconds next_ping_ = {};
   uint32_t request_id_ = {};
   // throttle
   core::limit::RateLimiter rate_limiter_;
