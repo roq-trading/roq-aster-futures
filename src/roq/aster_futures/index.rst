@@ -184,7 +184,7 @@ Environments
 
    .. code-block:: shell
 
-      $ $CONDA_PREFIX/share/roq-aster-futures/flags/prod/flags.cfg
+      $ --flagfile $CONDA_PREFIX/share/roq-aster-futures/flags/prod/flags.cfg
 
    .. include:: flags/prod/flags.cfg
      :code: shell
@@ -195,7 +195,7 @@ Configuration
 
 .. code-block:: shell
 
-   $ $CONDA_PREFIX/share/roq-aster-futures/config.toml
+   $ --flagfile $CONDA_PREFIX/share/roq-aster-futures/config.toml
 
 .. important::
 
