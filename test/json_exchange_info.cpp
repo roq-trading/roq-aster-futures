@@ -13,7 +13,7 @@ using namespace std::literals;
 
 // note! reduced
 TEST_CASE("simple", "[json_exchange_info]") {
-  auto const message =
+  auto message =
       R"({)"
       R"("timezone":"UTC",)"
       R"("serverTime":1759385623251,)"
@@ -158,5 +158,6 @@ TEST_CASE("simple", "[json_exchange_info]") {
       R"(])"
       R"(})";
   core::json::BufferStack buffer{65536, 2};
-  [[maybe_unused]] json::ExchangeInfo obj{message, buffer};
+  json::ExchangeInfo obj{message, buffer};
+  CHECK(obj.timezone == "UTC"sv);
 }
