@@ -2,14 +2,14 @@
 
 #include <catch2/catch_all.hpp>
 
-#include "roq/core/json/buffer_stack.hpp"
-
-#include "roq/aster_futures/json/parser.hpp"
+#include "parser_tester.hpp"
 
 using namespace roq;
 using namespace roq::aster_futures;
 
 using namespace std::literals;
+
+using value_type = json::DepthUpdate;
 
 // note! truncated
 TEST_CASE("simple", "[json_depth_update]") {
@@ -35,35 +35,6 @@ TEST_CASE("simple", "[json_depth_update]") {
                  R"(["4519.50","3.803"])"
                  R"(])"
                  R"(})";
-  core::json::BufferStack buffers{8192, 2};
-  // simple
-  json::DepthUpdate obj{message, buffers};
-  CHECK(obj.event_type == json::EventType::DEPTH_UPDATE);
-  // parser
-  struct MyHandler final : public json::Parser::Handler {
-    void operator()(Trace<json::Pong> const &) override { FAIL(); }
-    void operator()(Trace<json::Ack> const &) override { FAIL(); }
-    //
-    void operator()(Trace<json::AggTrade> const &) { FAIL(); }
-    void operator()(Trace<json::MarkPriceUpdate> const &) override { FAIL(); }
-    void operator()(Trace<json::MiniTicker> const &) override { FAIL(); }
-    void operator()(Trace<json::Ticker> const &) override { FAIL(); }
-    void operator()(Trace<json::BookTicker> const &) override { FAIL(); }
-    void operator()(Trace<json::DepthUpdate> const &event) override {
-      found = true;
-      auto &[trace_info, depth_update] = event;
-      CHECK(depth_update.event_type == json::EventType::DEPTH_UPDATE);
-    };
-    //
-    void operator()(Trace<json::Login> const &) override { FAIL(); }
-    void operator()(Trace<json::Account> const &) override { FAIL(); }
-    void operator()(Trace<json::Position> const &) override { FAIL(); }
-    void operator()(Trace<json::Order> const &) override { FAIL(); }
-    void operator()(Trace<json::Fill> const &) override { FAIL(); }
-
-    bool found = {};
-  } handler;
-  auto res = json::Parser::dispatch(handler, message, buffers, {}, false);
-  CHECK(res == true);
-  CHECK(handler.found == true);
+  auto helper = [](value_type const &obj) { CHECK(obj.event_type == json::EventType::DEPTH_UPDATE); };
+  ParserTester<value_type>::dispatch(helper, message, 8192, 2);
 }

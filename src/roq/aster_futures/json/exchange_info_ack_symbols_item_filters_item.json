@@ -1,5 +1,5 @@
 {
-  "name": "roq/aster_futures/json/ExchangeInfoSymbolsItemFiltersItem",
+  "name": "roq/aster_futures/json/ExchangeInfoAckSymbolsItemFiltersItem",
   "type": "dictionary",
   "values": [
     {

@@ -1,5 +1,5 @@
 {
-  "name": "roq/aster_futures/json/Depth",
+  "name": "roq/aster_futures/json/DepthAck",
   "type": "dictionary",
   "values": [
     {

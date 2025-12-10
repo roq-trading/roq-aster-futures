@@ -4,12 +4,14 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/aster_futures/json/exchange_info.hpp"
+#include "roq/aster_futures/json/exchange_info_ack.hpp"
 
 using namespace roq;
 using namespace roq::aster_futures;
 
 using namespace std::literals;
+
+using value_type = json::ExchangeInfoAck;
 
 // note! reduced
 TEST_CASE("simple", "[json_exchange_info]") {
@@ -157,7 +159,8 @@ TEST_CASE("simple", "[json_exchange_info]") {
       R"(})"
       R"(])"
       R"(})";
-  core::json::BufferStack buffer{65536, 2};
-  json::ExchangeInfo obj{message, buffer};
-  CHECK(obj.timezone == "UTC"sv);
+  auto helper = [&](value_type &obj) { CHECK(obj.timezone == "UTC"sv); };
+  core::json::BufferStack buffers{8192, 2};
+  value_type obj{message, buffers};
+  helper(obj);
 }

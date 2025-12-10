@@ -24,8 +24,8 @@
 #include "roq/aster_futures/rest_state.hpp"
 #include "roq/aster_futures/shared.hpp"
 
-#include "roq/aster_futures/json/depth.hpp"
-#include "roq/aster_futures/json/exchange_info.hpp"
+#include "roq/aster_futures/json/depth_ack.hpp"
+#include "roq/aster_futures/json/exchange_info_ack.hpp"
 
 namespace roq {
 namespace aster_futures {
@@ -68,11 +68,11 @@ class Rest final : public web::rest::Client::Handler {
 
   void get_exchange_info();
   void get_exchange_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<json::ExchangeInfo> const &);
+  void operator()(Trace<json::ExchangeInfoAck> const &);
 
   void get_depth(std::string_view const &symbol);
   void get_depth_ack(Trace<web::rest::Response> const &, std::string_view const &symbol);
-  void operator()(Trace<json::Depth> const &, std::string_view const &symbol);
+  void operator()(Trace<json::DepthAck> const &, std::string_view const &symbol);
 
   void check_request_queue(std::chrono::nanoseconds now);
 

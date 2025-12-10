@@ -34,14 +34,14 @@ set(AUTOGEN_SCHEMAS
     category_ws.json
     contract_type.json
     delivery_period.json
-    depth.json
+    depth_ack.json
     depth_update_item.json
     depth_update.json
     event.json
     event_type.json
-    exchange_info.json
-    exchange_info_symbols_item_filters_item.json
-    exchange_info_symbols_item.json
+    exchange_info_ack.json
+    exchange_info_ack_symbols_item_filters_item.json
+    exchange_info_ack_symbols_item.json
     fill_data_item_fee_detail_item.json
     fill_data_item.json
     fill_history_data.json

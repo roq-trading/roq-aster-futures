@@ -1,5 +1,5 @@
 {
-  "name": "roq/aster_futures/json/ExchangeInfoSymbolsItem",
+  "name": "roq/aster_futures/json/ExchangeInfoAckSymbolsItem",
   "type": "dictionary",
   "values": [
     {
@@ -108,7 +108,7 @@
     },
     {
       "name": "filters",
-      "type": "roq/aster_futures/json/ExchangeInfoSymbolsItemFiltersItem",
+      "type": "roq/aster_futures/json/ExchangeInfoAckSymbolsItemFiltersItem",
       "array": "std/span"
     },
     {

@@ -224,11 +224,12 @@ void Rest::get_exchange_info_ack(Trace<web::rest::Response> const &event, uint32
       download_.retry(state);
     };
     auto handle_success = [&](auto &body) {
+      log::debug("{}"sv, body);
       if (download_.skip(sequence, state)) {
         log::info("Download state={} has already been processed"sv, state);
       } else {
-        json::ExchangeInfo exchange_info{body, decode_buffer_};
-        Trace event{trace_info, exchange_info};
+        json::ExchangeInfoAck exchange_info_ack{body, decode_buffer_};
+        Trace event{trace_info, exchange_info_ack};
         (*this)(event);
         download_.check(state);
       }
@@ -237,14 +238,14 @@ void Rest::get_exchange_info_ack(Trace<web::rest::Response> const &event, uint32
   });
 }
 
-void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
-  auto &[trace_info, exchange_info] = event;
-  log::info<4>("exchange_info={}"sv, exchange_info);
+void Rest::operator()(Trace<json::ExchangeInfoAck> const &event) {
+  auto &[trace_info, exchange_info_ack] = event;
+  log::info<4>("exchange_info_ack={}"sv, exchange_info_ack);
   std::vector<Symbol> symbols;
-  symbols.reserve(std::size(exchange_info.symbols));
+  symbols.reserve(std::size(exchange_info_ack.symbols));
   size_t counter = 0;
-  for (size_t i = 0; i < std::size(exchange_info.symbols); ++i) {
-    auto &item = exchange_info.symbols[i];
+  for (size_t i = 0; i < std::size(exchange_info_ack.symbols); ++i) {
+    auto &item = exchange_info_ack.symbols[i];
     log::info<2>("item={}"sv, item);
     auto discard = shared_.discard_symbol(item.symbol);
     auto tick_size = NaN;
@@ -308,7 +309,7 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
         .expiry_datetime_utc = {},
         .exchange_time_utc = {},
         .exchange_sequence = {},
-        .sending_time_utc = exchange_info.server_time,
+        .sending_time_utc = exchange_info_ack.server_time,
         .discard = discard,
     };
     create_trace_and_dispatch(handler_, trace_info, reference_data, true);
@@ -323,7 +324,7 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
         .trading_status = map(item.status),
         .exchange_time_utc = {},
         .exchange_sequence = {},
-        .sending_time_utc = exchange_info.server_time,
+        .sending_time_utc = exchange_info_ack.server_time,
     };
     create_trace_and_dispatch(handler_, trace_info, market_status, true);
     if (all_symbols_.emplace(item.symbol).second) {  // only include new
@@ -338,7 +339,7 @@ void Rest::operator()(Trace<json::ExchangeInfo> const &event) {
     handler_(symbols_update);
   }
   if (counter > 0) [[unlikely]] {
-    log::info("Symbols {} / {}"sv, counter, std::size(exchange_info.symbols));
+    log::info("Symbols {} / {}"sv, counter, std::size(exchange_info_ack.symbols));
   }
 }
 
@@ -374,18 +375,19 @@ void Rest::get_depth_ack(Trace<web::rest::Response> const &event, std::string_vi
       // WHAT ???
     };
     auto handle_success = [&](auto &body) {
-      json::Depth depth{body, decode_buffer_};
-      Trace event{trace_info, depth};
+      log::debug("{}"sv, body);
+      json::DepthAck depth_ack{body, decode_buffer_};
+      Trace event{trace_info, depth_ack};
       (*this)(event, symbol);
     };
     process_response(event, handle_error, handle_success);
   });
 }
 
-void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &symbol) {
-  auto &[trace_info, depth] = event;
-  log::info<4>(R"(depth={}, symbol="{}")"sv, depth, symbol);
-  auto sequence = depth.last_update_id;
+void Rest::operator()(Trace<json::DepthAck> const &event, std::string_view const &symbol) {
+  auto &[trace_info, depth_ack] = event;
+  log::info<4>(R"(depth_ack={}, symbol="{}")"sv, depth_ack, symbol);
+  auto sequence = depth_ack.last_update_id;
   auto &bids = shared_.bids;
   auto &asks = shared_.asks;
   bids.clear();
@@ -401,10 +403,10 @@ void Rest::operator()(Trace<json::Depth> const &event, std::string_view const &s
     };
     result.emplace_back(std::move(mbp_update));
   };
-  for (auto &item : depth.bids) {
+  for (auto &item : depth_ack.bids) {
     emplace_back(bids, item);
   }
-  for (auto &item : depth.asks) {
+  for (auto &item : depth_ack.asks) {
     emplace_back(asks, item);
   }
   auto &instrument = shared_.get_instrument(symbol);
