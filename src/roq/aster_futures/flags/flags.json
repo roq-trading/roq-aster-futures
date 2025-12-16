@@ -6,7 +6,7 @@
       "name": "exchange",
       "type": "std/string",
       "required": true,
-      "default": "aster_futures",
+      "default": "aster-futures",
       "description": "Exchange identifier"
     }
   ]
