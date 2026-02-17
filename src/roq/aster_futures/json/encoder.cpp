@@ -21,7 +21,8 @@ namespace json {
 std::string_view Encoder::place_order(
     std::string &buffer,
     CreateOrder const &create_order,
-    server::oms::Order const &order,
+    server::oms::Order const &,
+    server::oms::RefData const &ref_data,
     std::string_view const &request_id,
     std::string_view const &category) {
   buffer.clear();
@@ -33,7 +34,7 @@ std::string_view Encoder::place_order(
       R"("qty":"{}",)"sv,
       category,
       create_order.symbol,
-      Decimal{create_order.quantity, order.quantity_precision.precision});
+      Decimal{create_order.quantity, ref_data.quantity.precision});
   if (create_order.order_type == roq::OrderType::LIMIT) {
     auto time_in_force = [&]() -> json::TimeInForce {
       if (create_order.execution_instructions.has(ExecutionInstruction::PARTICIPATE_DO_NOT_INITIATE)) {
@@ -45,7 +46,7 @@ std::string_view Encoder::place_order(
         std::back_inserter(buffer),
         R"("price":"{}",)"
         R"("timeInForce":"{}",)"sv,
-        Decimal{create_order.price, order.price_precision.precision},
+        Decimal{create_order.price, ref_data.price.precision},
         time_in_force.as_raw_text());
   }
   fmt::format_to(
@@ -68,7 +69,11 @@ std::string_view Encoder::place_order(
 }
 
 std::string_view Encoder::modify_order(
-    std::string &buffer, ModifyOrder const &modify_order, server::oms::Order const &order, [[maybe_unused]] std::string_view const &request_id) {
+    std::string &buffer,
+    ModifyOrder const &modify_order,
+    server::oms::Order const &order,
+    server::oms::RefData const &ref_data,
+    [[maybe_unused]] std::string_view const &request_id) {
   buffer.clear();
   if (std::empty(order.external_order_id)) {
     fmt::format_to(
@@ -84,10 +89,10 @@ std::string_view Encoder::modify_order(
         order.external_order_id);
   }
   if (!std::isnan(modify_order.quantity)) {
-    fmt::format_to(std::back_inserter(buffer), R"(,"qty":"{}")"sv, Decimal{modify_order.quantity, order.quantity_precision.precision});
+    fmt::format_to(std::back_inserter(buffer), R"(,"qty":"{}")"sv, Decimal{modify_order.quantity, ref_data.quantity.precision});
   }
   if (!std::isnan(modify_order.price)) {
-    fmt::format_to(std::back_inserter(buffer), R"(,"price":"{}")"sv, Decimal{modify_order.price, order.price_precision.precision});
+    fmt::format_to(std::back_inserter(buffer), R"(,"price":"{}")"sv, Decimal{modify_order.price, ref_data.price.precision});
   }
   fmt::format_to(
       std::back_inserter(buffer),
@@ -97,7 +102,11 @@ std::string_view Encoder::modify_order(
 }
 
 std::string_view Encoder::cancel_order(
-    std::string &buffer, CancelOrder const &, server::oms::Order const &order, [[maybe_unused]] std::string_view const &request_id) {
+    std::string &buffer,
+    CancelOrder const &,
+    server::oms::Order const &order,
+    server::oms::RefData const &,
+    [[maybe_unused]] std::string_view const &request_id) {
   buffer.clear();
   if (std::empty(order.external_order_id)) {
     fmt::format_to(
