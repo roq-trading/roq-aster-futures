@@ -122,6 +122,13 @@
     {
       "name": "createTime",
       "type": "std/milliseconds"
+    },
+    {
+      "name": "twapMinNotional",
+      "type": "std/double"
+    },
+    {
+      "name": "tags"
     }
   ]
 }

@@ -49,7 +49,7 @@ class MarketData final : public web::socket::Client::Handler, public json::Parse
 
   uint16_t stream_id() const { return stream_id_; }
 
-  bool ready() const { return status_ == ConnectionStatus::READY; }
+  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
 
   void operator()(Event<Start> const &);
   void operator()(Event<Stop> const &);
@@ -69,7 +69,7 @@ class MarketData final : public web::socket::Client::Handler, public json::Parse
   void operator()(web::socket::Client::Binary const &) override;
 
  private:
-  void operator()(ConnectionStatus);
+  void operator()(ConnectionStatus, std::string_view const &reason = {});
 
   void subscribe(std::span<Symbol const> const &symbols);
   void subscribe(std::span<Symbol const> const &symbols, std::span<std::string_view const> const &streams);
@@ -117,7 +117,7 @@ class MarketData final : public web::socket::Client::Handler, public json::Parse
   // cache
   Shared &shared_;
   // state
-  ConnectionStatus status_ = {};
+  ConnectionStatus connection_status_ = {};
   uint32_t request_id_ = {};
   // throttle
   core::limit::RateLimiter rate_limiter_;
