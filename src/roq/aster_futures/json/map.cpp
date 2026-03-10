@@ -612,6 +612,8 @@ constexpr Helper<aster_futures::json::TradingStatus>::operator std::optional<roq
       return roq::TradingStatus::PRE_OPEN;
     case SETTLING:
       return roq::TradingStatus::CLOSE;
+    case PRE_SETTLE:
+      return roq::TradingStatus::PRE_CLOSE;
   }
   return {};
 }
@@ -620,6 +622,7 @@ static_assert(Helper{aster_futures::json::TradingStatus{aster_futures::json::Tra
 static_assert(Helper{aster_futures::json::TradingStatus{aster_futures::json::TradingStatus::TRADING}} == roq::TradingStatus::OPEN);
 static_assert(Helper{aster_futures::json::TradingStatus{aster_futures::json::TradingStatus::PENDING_TRADING}} == roq::TradingStatus::PRE_OPEN);
 static_assert(Helper{aster_futures::json::TradingStatus{aster_futures::json::TradingStatus::SETTLING}} == roq::TradingStatus::CLOSE);
+static_assert(Helper{aster_futures::json::TradingStatus{aster_futures::json::TradingStatus::PRE_SETTLE}} == roq::TradingStatus::PRE_CLOSE);
 
 template <>
 template <>

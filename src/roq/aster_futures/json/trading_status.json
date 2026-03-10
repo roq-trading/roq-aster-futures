@@ -10,6 +10,9 @@
     },
     {
       "name": "SETTLING"
+    },
+    {
+      "name": "PRE_SETTLE"
     }
   ]
 }
