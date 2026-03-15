@@ -303,6 +303,7 @@ void OrderEntry::get_account_info() {
         .body = {},
         .quality_of_service = {},
     };
+    log::warn("DEBUG request={}"sv, request);
     auto sequence = download_.sequence();
     (*connection_)("account_info"sv, request, [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
       TraceInfo trace_info;
@@ -315,12 +316,14 @@ void OrderEntry::get_account_info() {
 void OrderEntry::get_account_info_ack(Trace<web::rest::Response> const &event, uint32_t sequence) {
   auto const state = OrderEntryState::ACCOUNT_INFO;
   profile_.account_info_ack([&]() {
+    log::warn("HERE"sv);
     auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       download_.retry(state);
     };
     auto handle_success = [&](auto &body) {
+      log::warn("DEBUG body={}"sv, body);
       if (download_.skip(sequence, state)) {
         log::info("Download state={} has already been processed"sv, state);
       } else {
@@ -1121,6 +1124,7 @@ void OrderEntry::countdown_cancel_all_ack(Trace<web::rest::Response> const &even
 void OrderEntry::process_response(web::rest::Response const &response, auto error_handler, auto success_handler) {
   try {
     auto [status, category, body] = response.result();
+    log::warn("DEBUG status={}, category={}, body={}"sv, status, category, body);
     switch (category) {
       using enum web::http::Category;
       case UNKNOWN:

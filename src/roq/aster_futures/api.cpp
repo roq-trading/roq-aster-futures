@@ -20,7 +20,7 @@ API API::create(Settings const &) {
           .depth = "/fapi/v1/depth"sv,
       },
       .order_management{
-          .account_info = "/api/v3/account/settings"sv,
+          .account_info = "/fapi/v2/account"sv,
           .account_assets = "/api/v3/account/assets"sv,
           .position_info = "/api/v3/position/current-position"sv,
           .open_orders = "/api/v3/trade/unfilled-orders"sv,
