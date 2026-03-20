@@ -129,6 +129,10 @@
     },
     {
       "name": "tags"
+    },
+    {
+      "name": "imn",
+      "type": "std/double"
     }
   ]
 }

@@ -291,8 +291,8 @@ void OrderEntry::get_account_info() {
   profile_.account_info([&]() {
     auto method = web::http::Method::GET;
     auto path = shared_.api.order_management.account_info;
-    auto query = fmt::format("?category={}"sv, shared_.api.category);
-    auto headers = account_.create_headers(method, path, query, {});
+    auto query = account_.create_query();
+    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
@@ -366,11 +366,12 @@ void OrderEntry::get_account_assets() {
     auto method = web::http::Method::GET;
     auto path = shared_.api.order_management.account_assets;
     auto query = fmt::format("?category={}"sv, shared_.api.category);
-    auto headers = account_.create_headers(method, path, query, {});
+    auto query_2 = account_.create_query(query);
+    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
-        .query = query,
+        .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
         .headers = headers,
@@ -445,11 +446,12 @@ void OrderEntry::get_position_info() {
     auto method = web::http::Method::GET;
     auto path = shared_.api.order_management.position_info;
     auto query = fmt::format("?category={}"sv, shared_.api.category);
-    auto headers = account_.create_headers(method, path, query, {});
+    auto query_2 = account_.create_query(query);
+    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
-        .query = query,
+        .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
         .headers = headers,
@@ -535,11 +537,12 @@ void OrderEntry::get_open_orders() {
     auto method = web::http::Method::GET;
     auto path = shared_.api.order_management.open_orders;
     auto query = fmt::format("?category={}"sv, shared_.api.category);
-    auto headers = account_.create_headers(method, path, query, {});
+    auto query_2 = account_.create_query(query);
+    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
-        .query = query,
+        .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
         .headers = headers,
@@ -638,12 +641,12 @@ void OrderEntry::get_fill_history() {
     auto method = web::http::Method::GET;
     auto path = shared_.api.order_management.fill_history;
     auto query = fmt::format("?category={}&startTime={}"sv, shared_.api.category, start_time.count());
-    log::warn("DEBUG query={}"sv, query);
-    auto headers = account_.create_headers(method, path, query, {});
+    auto query_2 = account_.create_query(query);
+    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
-        .query = query,
+        .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
         .headers = headers,
@@ -789,11 +792,12 @@ void OrderEntry::place_order(
     auto query = fmt::format("?category={}"sv, shared_.api.category);
     auto body = json::Encoder::place_order(encode_buffer_, create_order, order, ref_data, request_id, shared_.api.category);
     log::warn(R"(DEBUG body="{}")"sv, body);
-    auto headers = account_.create_headers(method, path, query, body);
+    auto query_2 = account_.create_query(query);
+    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
-        .query = query,
+        .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_JSON,
         .headers = headers,
@@ -867,7 +871,7 @@ void OrderEntry::modify_order(
     auto query = fmt::format("?category={}"sv, shared_.api.category);
     auto body = json::Encoder::modify_order(encode_buffer_, modify_order, order, ref_data, request_id);
     log::warn(R"(DEBUG body="{}")"sv, body);
-    auto headers = account_.create_headers(method, path, query, body);
+    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
@@ -945,7 +949,7 @@ void OrderEntry::cancel_order(
     auto query = fmt::format("?category={}"sv, shared_.api.category);
     auto body = json::Encoder::cancel_order(encode_buffer_, cancel_order, order, ref_data, request_id);
     log::warn(R"(DEBUG body="{}")"sv, body);
-    auto headers = account_.create_headers(method, path, query, body);
+    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
@@ -1017,7 +1021,7 @@ void OrderEntry::cancel_all_orders(Event<CancelAllOrders> const &event, std::str
     auto path = shared_.api.order_management.cancel_all_orders;
     auto query = fmt::format("?category={}"sv, shared_.api.category);
     auto body = json::Encoder::cancel_all_orders(encode_buffer_, cancel_all_orders, request_id, shared_.api.category);
-    auto headers = account_.create_headers(method, path, query, body);
+    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
@@ -1089,7 +1093,7 @@ void OrderEntry::countdown_cancel_all() {
     auto method = web::http::Method::POST;
     auto path = shared_.api.order_management.countdown_cancel_all;
     auto body = json::Encoder::countdown_cancel_all(encode_buffer_, std::chrono::duration_cast<std::chrono::seconds>(shared_.settings.rest.ping_freq));
-    auto headers = account_.create_headers(method, path, {}, body);
+    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,

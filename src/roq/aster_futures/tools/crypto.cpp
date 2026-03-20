@@ -14,10 +14,17 @@ namespace roq {
 namespace aster_futures {
 namespace tools {
 
+// === HELPERS ===
+
+namespace {
+auto create_headers(auto &key) {
+  return fmt::format("X-MBX-APIKEY: {}\r\n"sv, key);
+}
+}  // namespace
+
 // === IMPLEMENTATION ===
 
-Crypto::Crypto(std::string_view const &key, std::string_view const &secret, std::string_view const &passphrase)
-    : key_{key}, mac_{secret}, passphrase_{passphrase} {
+Crypto::Crypto(std::string_view const &key, std::string_view const &secret) : key_{key}, mac_{secret}, headers_{create_headers(key)} {
 }
 
 std::string Crypto::create_ws_login(std::chrono::milliseconds timestamp) {
@@ -39,31 +46,30 @@ std::string Crypto::create_ws_login(std::chrono::milliseconds timestamp) {
       R"(])"
       R"(}})"sv,
       key_,
-      passphrase_,
+      headers_,  // XXX
       timestamp.count(),
       signature);
   return result;
 }
 
-std::string Crypto::create_headers(
-    web::http::Method method, std::string_view const &path, std::string_view const &query, std::string_view const &body, std::chrono::milliseconds timestamp) {
-  assert(!std::empty(path));
-  auto tmp = fmt::format("{}{}{}{}{}"sv, timestamp.count(), method, path, query, body);
+std::string Crypto::create_query(std::chrono::milliseconds now_utc) {
+  auto tmp = fmt::format("timestamp={}"sv, now_utc.count());
   mac_.clear();
   mac_.update(tmp);
   auto digest = mac_.final(digest_);
   std::string signature;
   utils::codec::Base64::encode(signature, digest, false, false);
-  auto result = fmt::format(
-      "ACCESS-KEY: {}\r\n"
-      "ACCESS-SIGN: {}\r\n"
-      "ACCESS-TIMESTAMP: {}\r\n"
-      "ACCESS-PASSPHRASE: {}\r\n"sv,
-      key_,
-      signature,
-      timestamp.count(),
-      passphrase_);
-  return result;
+  return fmt::format("?{}&signature={}"sv, tmp, signature);
+}
+
+std::string Crypto::create_query(std::chrono::milliseconds now_utc, std::string_view const &query) {
+  auto tmp = fmt::format("{}&timestamp={}"sv, query.substr(1), now_utc.count());
+  mac_.clear();
+  mac_.update(tmp);
+  auto digest = mac_.final(digest_);
+  std::string signature;
+  utils::codec::Base64::encode(signature, digest, false, false);
+  return fmt::format("?{}&signature={}"sv, tmp, signature);
 }
 
 }  // namespace tools
