@@ -247,9 +247,9 @@ void OrderEntry::operator()(ConnectionStatus connection_status, std::string_view
   create_trace_and_dispatch(handler_, trace_info, stream_status);
 }
 
-uint32_t OrderEntry::download(OrderEntryState state) {
+uint32_t OrderEntry::download(State state) {
   switch (state) {
-    using enum OrderEntryState;
+    using enum State;
     case UNDEFINED:
       assert(false);
       break;
@@ -314,7 +314,7 @@ void OrderEntry::get_account_info() {
 }
 
 void OrderEntry::get_account_info_ack(Trace<web::rest::Response> const &event, uint32_t sequence) {
-  auto const state = OrderEntryState::ACCOUNT_INFO;
+  auto const state = State::ACCOUNT_INFO;
   profile_.account_info_ack([&]() {
     log::warn("HERE"sv);
     auto &[trace_info, response] = event;
@@ -388,7 +388,7 @@ void OrderEntry::get_account_assets() {
 }
 
 void OrderEntry::get_account_assets_ack(Trace<web::rest::Response> const &event, uint32_t sequence) {
-  auto const state = OrderEntryState::ACCOUNT_ASSETS;
+  auto const state = State::ACCOUNT_ASSETS;
   profile_.account_assets_ack([&]() {
     auto &[trace_assets, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
@@ -468,7 +468,7 @@ void OrderEntry::get_position_info() {
 }
 
 void OrderEntry::get_position_info_ack(Trace<web::rest::Response> const &event, uint32_t sequence) {
-  auto const state = OrderEntryState::POSITION_INFO;
+  auto const state = State::POSITION_INFO;
   profile_.position_info_ack([&]() {
     auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
@@ -559,7 +559,7 @@ void OrderEntry::get_open_orders() {
 }
 
 void OrderEntry::get_open_orders_ack(Trace<web::rest::Response> const &event, uint32_t sequence) {
-  auto const state = OrderEntryState::OPEN_ORDERS;
+  auto const state = State::OPEN_ORDERS;
   profile_.open_orders_ack([&]() {
     auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
@@ -663,7 +663,7 @@ void OrderEntry::get_fill_history() {
 }
 
 void OrderEntry::get_fill_history_ack(Trace<web::rest::Response> const &event, uint32_t sequence) {
-  auto const state = OrderEntryState::FILL_HISTORY;
+  auto const state = State::FILL_HISTORY;
   profile_.fill_history_ack([&]() {
     auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {

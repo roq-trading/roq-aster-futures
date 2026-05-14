@@ -21,7 +21,6 @@
 #include "roq/server.hpp"
 
 #include "roq/aster_futures/account.hpp"
-#include "roq/aster_futures/rest_state.hpp"
 #include "roq/aster_futures/shared.hpp"
 
 #include "roq/aster_futures/json/depth_ack.hpp"
@@ -64,7 +63,13 @@ class Rest final : public web::rest::Client::Handler {
 
   void operator()(ConnectionStatus, std::string_view const &reason = {});
 
-  uint32_t download(RestState);
+  enum class State {
+    UNDEFINED = 0,
+    EXCHANGE_INFO,
+    DONE,
+  };
+
+  uint32_t download(State);
 
   void get_exchange_info();
   void get_exchange_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
@@ -101,7 +106,7 @@ class Rest final : public web::rest::Client::Handler {
   Shared &shared_;
   // state
   ConnectionStatus connection_status_ = {};
-  core::Download<RestState> download_;
+  core::Download<State> download_;
 };
 
 }  // namespace aster_futures

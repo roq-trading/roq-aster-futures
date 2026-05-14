@@ -21,7 +21,6 @@
 #include "roq/server.hpp"
 
 #include "roq/aster_futures/account.hpp"
-#include "roq/aster_futures/order_entry_state.hpp"
 #include "roq/aster_futures/shared.hpp"
 
 #include "roq/aster_futures/json/account_assets.hpp"
@@ -83,7 +82,17 @@ class OrderEntry final : public web::rest::Client::Handler {
 
   void operator()(ConnectionStatus, std::string_view const &reason = {});
 
-  uint32_t download(OrderEntryState state);
+  enum class State {
+    UNDEFINED = 0,
+    ACCOUNT_INFO,
+    ACCOUNT_ASSETS,
+    POSITION_INFO,
+    OPEN_ORDERS,
+    FILL_HISTORY,
+    DONE,
+  };
+
+  uint32_t download(State state);
 
   // account_info
   void get_account_info();
@@ -187,7 +196,7 @@ class OrderEntry final : public web::rest::Client::Handler {
   Shared &shared_;
   // state
   ConnectionStatus connection_status_ = {};
-  core::Download<OrderEntryState> download_;
+  core::Download<State> download_;
   //
   std::string encode_buffer_;
   std::chrono::nanoseconds next_heartbeat_ = {};
