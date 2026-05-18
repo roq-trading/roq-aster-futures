@@ -13,12 +13,13 @@
 
 #include "roq/aster_futures/account.hpp"
 #include "roq/aster_futures/config.hpp"
+#include "roq/aster_futures/settings.hpp"
+#include "roq/aster_futures/shared.hpp"
+
 #include "roq/aster_futures/drop_copy.hpp"
 #include "roq/aster_futures/market_data.hpp"
 #include "roq/aster_futures/order_entry.hpp"
 #include "roq/aster_futures/rest.hpp"
-#include "roq/aster_futures/settings.hpp"
-#include "roq/aster_futures/shared.hpp"
 
 namespace roq {
 namespace aster_futures {
