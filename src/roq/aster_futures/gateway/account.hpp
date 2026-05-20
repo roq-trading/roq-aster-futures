@@ -15,8 +15,7 @@ namespace roq {
 namespace aster_futures {
 namespace gateway {
 
-class Account final {
- public:
+struct Account final {
   Account(Config const &, std::string_view const &name);
 
   Account(Account const &) = delete;

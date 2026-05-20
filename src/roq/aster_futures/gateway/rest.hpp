@@ -30,8 +30,7 @@ namespace roq {
 namespace aster_futures {
 namespace gateway {
 
-class Rest final : public web::rest::Client::Handler {
- public:
+struct Rest final : public web::rest::Client::Handler {
   struct SymbolsUpdate final {
     std::span<Symbol const> symbols;
   };

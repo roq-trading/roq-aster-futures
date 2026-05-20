@@ -25,15 +25,14 @@ namespace roq {
 namespace aster_futures {
 namespace gateway {
 
-class ROQ_PUBLIC Controller final : public server::Handler,
-                                    public Rest::Handler,
-                                    public OrderEntry::Handler,
-                                    public DropCopy::Handler,
-                                    public MarketData::Handler {
- public:
+struct Controller final : public server::Handler, public Rest::Handler, public OrderEntry::Handler, public DropCopy::Handler, public MarketData::Handler {
   Controller(server::Dispatcher &, Settings const &, Config const &, io::Context &);
 
   Controller(Controller const &) = delete;
+
+  virtual ~Controller() = default;
+
+  ROQ_PUBLIC static std::unique_ptr<server::Handler> create(server::Dispatcher &, Settings const &, Config const &, io::Context &);
 
  protected:
   // server::Handler
