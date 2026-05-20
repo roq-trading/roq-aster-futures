@@ -20,8 +20,8 @@
 
 #include "roq/server.hpp"
 
-#include "roq/aster_futures/account.hpp"
-#include "roq/aster_futures/shared.hpp"
+#include "roq/aster_futures/gateway/account.hpp"
+#include "roq/aster_futures/gateway/shared.hpp"
 
 #include "roq/aster_futures/json/account_assets.hpp"
 #include "roq/aster_futures/json/account_info.hpp"
@@ -36,6 +36,7 @@
 
 namespace roq {
 namespace aster_futures {
+namespace gateway {
 
 class OrderEntry final : public web::rest::Client::Handler {
  public:
@@ -202,5 +203,6 @@ class OrderEntry final : public web::rest::Client::Handler {
   std::chrono::nanoseconds next_heartbeat_ = {};
 };
 
+}  // namespace gateway
 }  // namespace aster_futures
 }  // namespace roq

@@ -4,10 +4,11 @@
 
 #include <string_view>
 
-#include "roq/aster_futures/settings.hpp"
+#include "roq/aster_futures/gateway/settings.hpp"
 
 namespace roq {
 namespace aster_futures {
+namespace gateway {
 
 struct API final {
   std::string_view category;
@@ -34,5 +35,6 @@ struct API final {
   static API create(Settings const &);
 };
 
+}  // namespace gateway
 }  // namespace aster_futures
 }  // namespace roq

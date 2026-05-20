@@ -7,12 +7,13 @@
 
 #include "roq/web/http/method.hpp"
 
-#include "roq/aster_futures/config.hpp"
+#include "roq/aster_futures/gateway/config.hpp"
 
 #include "roq/aster_futures/tools/crypto.hpp"
 
 namespace roq {
 namespace aster_futures {
+namespace gateway {
 
 class Account final {
  public:
@@ -33,5 +34,6 @@ class Account final {
   tools::Crypto crypto_;
 };
 
+}  // namespace gateway
 }  // namespace aster_futures
 }  // namespace roq

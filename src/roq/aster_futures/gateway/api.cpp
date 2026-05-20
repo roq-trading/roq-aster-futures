@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2026, Hans Erik Thrane */
 
-#include "roq/aster_futures/api.hpp"
+#include "roq/aster_futures/gateway/api.hpp"
 
 #include "roq/logging.hpp"
 
@@ -8,6 +8,7 @@ using namespace std::literals;
 
 namespace roq {
 namespace aster_futures {
+namespace gateway {
 
 // === IMPLEMENTATION ===
 
@@ -34,5 +35,6 @@ API API::create(Settings const &) {
   };
 }
 
+}  // namespace gateway
 }  // namespace aster_futures
 }  // namespace roq

@@ -2,62 +2,53 @@
 
 #pragma once
 
-#include <deque>
 #include <string>
 #include <string_view>
-#include <utility>
-#include <vector>
 
 #include "roq/utils/metrics/counter.hpp"
 #include "roq/utils/metrics/latency.hpp"
 #include "roq/utils/metrics/profile.hpp"
 
-#include "roq/core/timer_queue.hpp"
-
-#include "roq/core/limit/rate_limiter.hpp"
-
 #include "roq/io/context.hpp"
 
 #include "roq/web/socket/client.hpp"
+
+#include "roq/core/download.hpp"
 
 #include "roq/core/json/buffer_stack.hpp"
 
 #include "roq/server.hpp"
 
-#include "roq/aster_futures/shared.hpp"
+#include "roq/aster_futures/gateway/account.hpp"
+#include "roq/aster_futures/gateway/shared.hpp"
 
 #include "roq/aster_futures/json/parser.hpp"
 
 namespace roq {
 namespace aster_futures {
+namespace gateway {
 
-class MarketData final : public web::socket::Client::Handler, public json::Parser::Handler {
+class DropCopy final : public web::socket::Client::Handler, json::Parser::Handler {
  public:
   struct Handler {
     virtual void operator()(Trace<StreamStatus> const &) = 0;
     virtual void operator()(Trace<ExternalLatency> const &) = 0;
-    virtual void operator()(Trace<MarketStatus> const &, bool is_last) = 0;
-    virtual void operator()(Trace<TopOfBook> const &, bool is_last) = 0;
-    virtual void operator()(Trace<MarketByPriceUpdate> const &, bool is_last) = 0;
-    virtual void operator()(Trace<TradeSummary> const &, bool is_last) = 0;
-    virtual void operator()(Trace<StatisticsUpdate> const &, bool is_last) = 0;
+    virtual void operator()(Trace<TradeUpdate> const &, bool is_last, uint8_t user_id, std::string_view const &request_id) = 0;
+    virtual void operator()(Trace<FundsUpdate> const &, bool is_last) = 0;
+    virtual void operator()(Trace<PositionUpdate> const &, bool is_last) = 0;
   };
 
-  MarketData(Handler &, io::Context &, uint16_t stream_id, Shared &, size_t index);
+  DropCopy(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &);
 
-  MarketData(MarketData const &) = delete;
+  DropCopy(DropCopy const &) = delete;
 
-  uint16_t stream_id() const { return stream_id_; }
-
-  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
+  bool ready() const;
 
   void operator()(Event<Start> const &);
   void operator()(Event<Stop> const &);
   void operator()(Event<Timer> const &);
 
   void operator()(metrics::Writer &) const;
-
-  void subscribe(size_t start_from = 0);
 
  protected:
   void operator()(web::socket::Client::Connected const &) override;
@@ -67,16 +58,6 @@ class MarketData final : public web::socket::Client::Handler, public json::Parse
   void operator()(web::socket::Client::Latency const &) override;
   void operator()(web::socket::Client::Text const &) override;
   void operator()(web::socket::Client::Binary const &) override;
-
- private:
-  void operator()(ConnectionStatus, std::string_view const &reason = {});
-
-  void subscribe(std::span<Symbol const> const &symbols);
-  void subscribe(std::span<Symbol const> const &symbols, std::span<std::string_view const> const &streams);
-
-  void check_request_queue(std::chrono::nanoseconds now);
-
-  void parse(std::string_view const &message);
 
   void operator()(Trace<json::Pong> const &) override;
   void operator()(Trace<json::Ack> const &) override;
@@ -95,11 +76,21 @@ class MarketData final : public web::socket::Client::Handler, public json::Parse
   void operator()(Trace<json::Fill> const &) override;
 
  private:
+  void operator()(ConnectionStatus, std::string_view const &reason = {});
+
+  void login();
+
+  void subscribe();
+
+  void subscribe(std::string_view const &topic);
+
+  void parse(std::string_view const &message);
+
+ private:
   Handler &handler_;
   // config
   uint16_t const stream_id_;
   std::string const name_;
-  size_t const index_;
   // web socket
   std::unique_ptr<web::socket::Client> connection_;
   // buffers
@@ -109,20 +100,22 @@ class MarketData final : public web::socket::Client::Handler, public json::Parse
     utils::metrics::Counter disconnect;
   } counter_;
   struct {
-    utils::metrics::Profile parse, pong, ack, agg_trade, mark_price_update, mini_ticker, ticker, book_ticker, depth_update;
+    utils::metrics::Profile parse;
   } profile_;
   struct {
-    utils::metrics::Latency ping;
+    utils::metrics::Latency ping, heartbeat;
   } latency_;
+  // account
+  Account &account_;
   // cache
   Shared &shared_;
   // state
+  bool ready_ = false;
   ConnectionStatus connection_status_ = {};
-  uint32_t request_id_ = {};
-  // throttle
-  core::limit::RateLimiter rate_limiter_;
-  core::TimerQueue<std::string> request_queue_;
+  std::chrono::nanoseconds logon_timeout_ = {};
+  std::chrono::nanoseconds next_ping_ = {};
 };
 
+}  // namespace gateway
 }  // namespace aster_futures
 }  // namespace roq

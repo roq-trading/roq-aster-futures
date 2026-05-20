@@ -11,24 +11,29 @@
 
 #include "roq/io/context.hpp"
 
-#include "roq/aster_futures/account.hpp"
-#include "roq/aster_futures/config.hpp"
-#include "roq/aster_futures/settings.hpp"
-#include "roq/aster_futures/shared.hpp"
+#include "roq/aster_futures/gateway/account.hpp"
+#include "roq/aster_futures/gateway/config.hpp"
+#include "roq/aster_futures/gateway/settings.hpp"
+#include "roq/aster_futures/gateway/shared.hpp"
 
-#include "roq/aster_futures/drop_copy.hpp"
-#include "roq/aster_futures/market_data.hpp"
-#include "roq/aster_futures/order_entry.hpp"
-#include "roq/aster_futures/rest.hpp"
+#include "roq/aster_futures/gateway/drop_copy.hpp"
+#include "roq/aster_futures/gateway/market_data.hpp"
+#include "roq/aster_futures/gateway/order_entry.hpp"
+#include "roq/aster_futures/gateway/rest.hpp"
 
 namespace roq {
 namespace aster_futures {
+namespace gateway {
 
-class Gateway final : public server::Handler, public Rest::Handler, public OrderEntry::Handler, public DropCopy::Handler, public MarketData::Handler {
+class ROQ_PUBLIC Controller final : public server::Handler,
+                                    public Rest::Handler,
+                                    public OrderEntry::Handler,
+                                    public DropCopy::Handler,
+                                    public MarketData::Handler {
  public:
-  Gateway(server::Dispatcher &, Settings const &, Config const &, io::Context &);
+  Controller(server::Dispatcher &, Settings const &, Config const &, io::Context &);
 
-  Gateway(Gateway const &) = delete;
+  Controller(Controller const &) = delete;
 
  protected:
   // server::Handler
@@ -111,5 +116,6 @@ class Gateway final : public server::Handler, public Rest::Handler, public Order
   std::vector<std::unique_ptr<MarketData>> market_data_;
 };
 
+}  // namespace gateway
 }  // namespace aster_futures
 }  // namespace roq

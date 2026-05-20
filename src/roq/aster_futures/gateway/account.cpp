@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2026, Hans Erik Thrane */
 
-#include "roq/aster_futures/account.hpp"
+#include "roq/aster_futures/gateway/account.hpp"
 
 #include "roq/utils/safe_cast.hpp"
 
@@ -8,6 +8,7 @@
 
 namespace roq {
 namespace aster_futures {
+namespace gateway {
 
 // === IMPLEMENTATION ===
 
@@ -29,5 +30,6 @@ std::string Account::create_query(std::string_view const &query) {
   return crypto_.create_query(now_utc, query);
 }
 
+}  // namespace gateway
 }  // namespace aster_futures
 }  // namespace roq

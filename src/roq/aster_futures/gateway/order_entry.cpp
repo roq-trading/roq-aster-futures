@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2026, Hans Erik Thrane */
 
-#include "roq/aster_futures/order_entry.hpp"
+#include "roq/aster_futures/gateway/order_entry.hpp"
 
 #include <utility>
 
@@ -21,6 +21,7 @@ using namespace std::literals;
 
 namespace roq {
 namespace aster_futures {
+namespace gateway {
 
 // === CONSTANTS ===
 
@@ -1194,5 +1195,6 @@ void OrderEntry::operator()(Trace<server::oms::OrderUpdate> const &event, std::s
   }
 }
 
+}  // namespace gateway
 }  // namespace aster_futures
 }  // namespace roq

@@ -4,10 +4,11 @@
 
 #include "roq/market/mbp/sequencer.hpp"
 
-#include "roq/aster_futures/settings.hpp"
+#include "roq/aster_futures/gateway/settings.hpp"
 
 namespace roq {
 namespace aster_futures {
+namespace gateway {
 
 struct Instrument final {
   explicit Instrument(Settings const &);
@@ -21,5 +22,6 @@ struct Instrument final {
   market::mbp::Sequencer sequencer_;
 };
 
+}  // namespace gateway
 }  // namespace aster_futures
 }  // namespace roq

@@ -17,12 +17,13 @@
 
 #include "roq/core/limit/rate_limiter.hpp"
 
-#include "roq/aster_futures/api.hpp"
-#include "roq/aster_futures/instrument.hpp"
-#include "roq/aster_futures/settings.hpp"
+#include "roq/aster_futures/gateway/api.hpp"
+#include "roq/aster_futures/gateway/instrument.hpp"
+#include "roq/aster_futures/gateway/settings.hpp"
 
 namespace roq {
 namespace aster_futures {
+namespace gateway {
 
 struct Shared final {
   Shared(server::Dispatcher &, Settings const &);
@@ -67,5 +68,6 @@ struct Shared final {
   core::TimerQueue<std::string> depth_request_queue;
 };
 
+}  // namespace gateway
 }  // namespace aster_futures
 }  // namespace roq

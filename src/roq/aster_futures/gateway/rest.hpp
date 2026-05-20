@@ -20,14 +20,15 @@
 
 #include "roq/server.hpp"
 
-#include "roq/aster_futures/account.hpp"
-#include "roq/aster_futures/shared.hpp"
+#include "roq/aster_futures/gateway/account.hpp"
+#include "roq/aster_futures/gateway/shared.hpp"
 
 #include "roq/aster_futures/json/depth_ack.hpp"
 #include "roq/aster_futures/json/exchange_info_ack.hpp"
 
 namespace roq {
 namespace aster_futures {
+namespace gateway {
 
 class Rest final : public web::rest::Client::Handler {
  public:
@@ -109,5 +110,6 @@ class Rest final : public web::rest::Client::Handler {
   core::Download<State> download_;
 };
 
+}  // namespace gateway
 }  // namespace aster_futures
 }  // namespace roq

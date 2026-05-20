@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2026, Hans Erik Thrane */
 
-#include "roq/aster_futures/drop_copy.hpp"
+#include "roq/aster_futures/gateway/drop_copy.hpp"
 
 #include "roq/mask.hpp"
 
@@ -17,6 +17,7 @@ using namespace std::literals;
 
 namespace roq {
 namespace aster_futures {
+namespace gateway {
 
 // === CONSTANTS ===
 
@@ -485,5 +486,6 @@ void DropCopy::operator()(Trace<json::Fill> const &event) {
   dispatch();
 }
 
+}  // namespace gateway
 }  // namespace aster_futures
 }  // namespace roq

@@ -1,9 +1,10 @@
 /* Copyright (c) 2017-2026, Hans Erik Thrane */
 
-#include "roq/aster_futures/shared.hpp"
+#include "roq/aster_futures/gateway/shared.hpp"
 
 namespace roq {
 namespace aster_futures {
+namespace gateway {
 
 // === IMPLEMENTATION ===
 
@@ -22,5 +23,6 @@ Instrument &Shared::get_instrument(std::string_view const &symbol) {
   return (*iter).second;
 }
 
+}  // namespace gateway
 }  // namespace aster_futures
 }  // namespace roq

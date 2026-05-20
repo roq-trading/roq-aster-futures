@@ -1,6 +1,6 @@
 /* Copyright (c) 2017-2026, Hans Erik Thrane */
 
-#include "roq/aster_futures/market_data.hpp"
+#include "roq/aster_futures/gateway/market_data.hpp"
 
 #include <algorithm>
 
@@ -24,6 +24,7 @@ using namespace std::literals;
 
 namespace roq {
 namespace aster_futures {
+namespace gateway {
 
 // === CONSTANTS ===
 
@@ -529,5 +530,6 @@ void MarketData::operator()(Trace<json::Fill> const &) {
   log::fatal("Unexpected"sv);
 }
 
+}  // namespace gateway
 }  // namespace aster_futures
 }  // namespace roq
