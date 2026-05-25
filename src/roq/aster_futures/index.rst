@@ -13,8 +13,8 @@
 .. |footnote-3| unicode:: U+2778
 
 
-roq-aster-futures
-=================
+`roq-aster-futures <https://github.com/roq-trading/roq-aster-futures/>`__
+=========================================================================
 
 
 .. tab:: Unstable
@@ -335,6 +335,12 @@ Common
 * :ref:`Using Flags <abseil-cpp>`
 * :ref:`Gateway Flags <gateway-flags>`
 * :ref:`Gateway Config <gateway-config>`
+
+
+GitHub
+~~~~~~
+
+* `roq-aster-futures <https://github.com/roq-trading/roq-aster-futures/>`__
 
 
 Exchange
