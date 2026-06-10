@@ -26,13 +26,13 @@
 
 #include "roq/aster_futures/gateway/shared.hpp"
 
-#include "roq/aster_futures/json/parser.hpp"
+#include "roq/aster_futures/protocol/json/parser.hpp"
 
 namespace roq {
 namespace aster_futures {
 namespace gateway {
 
-struct MarketData final : public web::socket::Client::Handler, public json::Parser::Handler {
+struct MarketData final : public web::socket::Client::Handler, public protocol::json::Parser::Handler {
   struct Handler {
     virtual void operator()(Trace<StreamStatus> const &) = 0;
     virtual void operator()(Trace<ExternalLatency> const &) = 0;
@@ -78,21 +78,21 @@ struct MarketData final : public web::socket::Client::Handler, public json::Pars
 
   void parse(std::string_view const &message);
 
-  void operator()(Trace<json::Pong> const &) override;
-  void operator()(Trace<json::Ack> const &) override;
+  void operator()(Trace<protocol::json::Pong> const &) override;
+  void operator()(Trace<protocol::json::Ack> const &) override;
 
-  void operator()(Trace<json::AggTrade> const &) override;
-  void operator()(Trace<json::MarkPriceUpdate> const &) override;
-  void operator()(Trace<json::MiniTicker> const &) override;
-  void operator()(Trace<json::Ticker> const &) override;
-  void operator()(Trace<json::BookTicker> const &) override;
-  void operator()(Trace<json::DepthUpdate> const &) override;
+  void operator()(Trace<protocol::json::AggTrade> const &) override;
+  void operator()(Trace<protocol::json::MarkPriceUpdate> const &) override;
+  void operator()(Trace<protocol::json::MiniTicker> const &) override;
+  void operator()(Trace<protocol::json::Ticker> const &) override;
+  void operator()(Trace<protocol::json::BookTicker> const &) override;
+  void operator()(Trace<protocol::json::DepthUpdate> const &) override;
 
-  void operator()(Trace<json::Login> const &) override;
-  void operator()(Trace<json::Account> const &) override;
-  void operator()(Trace<json::Position> const &) override;
-  void operator()(Trace<json::Order> const &) override;
-  void operator()(Trace<json::Fill> const &) override;
+  void operator()(Trace<protocol::json::Login> const &) override;
+  void operator()(Trace<protocol::json::Account> const &) override;
+  void operator()(Trace<protocol::json::Position> const &) override;
+  void operator()(Trace<protocol::json::Order> const &) override;
+  void operator()(Trace<protocol::json::Fill> const &) override;
 
  private:
   Handler &handler_;

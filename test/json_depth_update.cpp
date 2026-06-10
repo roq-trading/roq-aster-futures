@@ -9,7 +9,7 @@ using namespace roq::aster_futures;
 
 using namespace std::literals;
 
-using value_type = json::DepthUpdate;
+using value_type = protocol::json::DepthUpdate;
 
 // note! truncated
 TEST_CASE("simple", "[json_depth_update]") {
@@ -35,6 +35,6 @@ TEST_CASE("simple", "[json_depth_update]") {
                  R"(["4519.50","3.803"])"
                  R"(])"
                  R"(})";
-  auto helper = [](value_type const &obj) { CHECK(obj.event_type == json::EventType::DEPTH_UPDATE); };
+  auto helper = [](value_type const &obj) { CHECK(obj.event_type == protocol::json::EventType::DEPTH_UPDATE); };
   ParserTester<value_type>::dispatch(helper, message, 8192, 2);
 }

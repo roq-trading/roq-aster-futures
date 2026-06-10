@@ -1,0 +1,36 @@
+{
+  "name": "roq/aster_futures/protocol/json/AccountInfoData",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "uid",
+      "type": "std/string_view"
+    },
+    {
+      "name": "accountMode",
+      "type": "roq/aster_futures/protocol/json/AccountMode"
+    },
+    {
+      "name": "assetMode",
+      "type": "roq/aster_futures/protocol/json/AssetMode"
+    },
+    {
+      "name": "holdMode",
+      "type": "roq/aster_futures/protocol/json/HoldMode"
+    },
+    {
+      "name": "stpMode",
+      "type": "roq/aster_futures/protocol/json/StpMode"
+    },
+    {
+      "name": "symbolConfigList",
+      "type": "roq/aster_futures/protocol/json/AccountInfoDataSymbolConfigItem",
+      "array": "std/span"
+    },
+    {
+      "name": "coinConfigList",
+      "type": "roq/aster_futures/protocol/json/AccountInfoDataCoinConfigItem",
+      "array": "std/span"
+    }
+  ]
+}

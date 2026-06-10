@@ -9,7 +9,7 @@ using namespace roq::aster_futures;
 
 using namespace std::literals;
 
-using value_type = json::AggTrade;
+using value_type = protocol::json::AggTrade;
 
 // note! truncated
 TEST_CASE("simple", "[json_agg_trade]") {
@@ -25,6 +25,6 @@ TEST_CASE("simple", "[json_agg_trade]") {
                  R"("T":1759537956702,)"
                  R"("m":true)"
                  R"(})";
-  auto helper = [](value_type const &obj) { CHECK(obj.event_type == json::EventType::AGG_TRADE); };
+  auto helper = [](value_type const &obj) { CHECK(obj.event_type == protocol::json::EventType::AGG_TRADE); };
   ParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }

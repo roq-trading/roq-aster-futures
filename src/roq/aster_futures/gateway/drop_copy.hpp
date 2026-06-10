@@ -22,13 +22,13 @@
 #include "roq/aster_futures/gateway/account.hpp"
 #include "roq/aster_futures/gateway/shared.hpp"
 
-#include "roq/aster_futures/json/parser.hpp"
+#include "roq/aster_futures/protocol/json/parser.hpp"
 
 namespace roq {
 namespace aster_futures {
 namespace gateway {
 
-struct DropCopy final : public web::socket::Client::Handler, json::Parser::Handler {
+struct DropCopy final : public web::socket::Client::Handler, protocol::json::Parser::Handler {
   struct Handler {
     virtual void operator()(Trace<StreamStatus> const &) = 0;
     virtual void operator()(Trace<ExternalLatency> const &) = 0;
@@ -58,21 +58,21 @@ struct DropCopy final : public web::socket::Client::Handler, json::Parser::Handl
   void operator()(web::socket::Client::Text const &) override;
   void operator()(web::socket::Client::Binary const &) override;
 
-  void operator()(Trace<json::Pong> const &) override;
-  void operator()(Trace<json::Ack> const &) override;
+  void operator()(Trace<protocol::json::Pong> const &) override;
+  void operator()(Trace<protocol::json::Ack> const &) override;
 
-  void operator()(Trace<json::AggTrade> const &) override;
-  void operator()(Trace<json::MarkPriceUpdate> const &) override;
-  void operator()(Trace<json::MiniTicker> const &) override;
-  void operator()(Trace<json::Ticker> const &) override;
-  void operator()(Trace<json::BookTicker> const &) override;
-  void operator()(Trace<json::DepthUpdate> const &) override;
+  void operator()(Trace<protocol::json::AggTrade> const &) override;
+  void operator()(Trace<protocol::json::MarkPriceUpdate> const &) override;
+  void operator()(Trace<protocol::json::MiniTicker> const &) override;
+  void operator()(Trace<protocol::json::Ticker> const &) override;
+  void operator()(Trace<protocol::json::BookTicker> const &) override;
+  void operator()(Trace<protocol::json::DepthUpdate> const &) override;
 
-  void operator()(Trace<json::Login> const &) override;
-  void operator()(Trace<json::Account> const &) override;
-  void operator()(Trace<json::Position> const &) override;
-  void operator()(Trace<json::Order> const &) override;
-  void operator()(Trace<json::Fill> const &) override;
+  void operator()(Trace<protocol::json::Login> const &) override;
+  void operator()(Trace<protocol::json::Account> const &) override;
+  void operator()(Trace<protocol::json::Position> const &) override;
+  void operator()(Trace<protocol::json::Order> const &) override;
+  void operator()(Trace<protocol::json::Fill> const &) override;
 
  private:
   void operator()(ConnectionStatus, std::string_view const &reason = {});

@@ -1,9 +1,0 @@
-{
-  "name": "roq/aster_futures/json/ContractType",
-  "type": "enum",
-  "values": [
-    {
-      "name": "PERPETUAL"
-    }
-  ]
-}

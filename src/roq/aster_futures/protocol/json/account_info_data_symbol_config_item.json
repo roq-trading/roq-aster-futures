@@ -1,0 +1,22 @@
+{
+  "name": "roq/aster_futures/protocol/json/AccountInfoDataSymbolConfigItem",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "category",
+      "type": "roq/aster_futures/protocol/json/Category"
+    },
+    {
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "name": "marginMode",
+      "type": "roq/aster_futures/protocol/json/MarginMode"
+    },
+    {
+      "name": "leverage",
+      "type": "std/double"
+    }
+  ]
+}

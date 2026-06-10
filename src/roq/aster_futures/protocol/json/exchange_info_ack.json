@@ -1,0 +1,32 @@
+{
+  "name": "roq/aster_futures/protocol/json/ExchangeInfoAck",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "timezone",
+      "type": "std/string_view"
+    },
+    {
+      "name": "serverTime",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "futuresType",
+      "type": "std/string_view"
+    },
+    {
+      "name": "rateLimits"
+    },
+    {
+      "name": "exchangeFilters"
+    },
+    {
+      "name": "assets"
+    },
+    {
+      "name": "symbols",
+      "type": "roq/aster_futures/protocol/json/ExchangeInfoAckSymbolsItem",
+      "array": "std/span"
+    }
+  ]
+}

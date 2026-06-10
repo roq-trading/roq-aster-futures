@@ -23,16 +23,16 @@
 #include "roq/aster_futures/gateway/account.hpp"
 #include "roq/aster_futures/gateway/shared.hpp"
 
-#include "roq/aster_futures/json/account_assets.hpp"
-#include "roq/aster_futures/json/account_info.hpp"
-#include "roq/aster_futures/json/fill_history.hpp"
-#include "roq/aster_futures/json/open_orders.hpp"
-#include "roq/aster_futures/json/position_info.hpp"
+#include "roq/aster_futures/protocol/json/account_assets.hpp"
+#include "roq/aster_futures/protocol/json/account_info.hpp"
+#include "roq/aster_futures/protocol/json/fill_history.hpp"
+#include "roq/aster_futures/protocol/json/open_orders.hpp"
+#include "roq/aster_futures/protocol/json/position_info.hpp"
 
-#include "roq/aster_futures/json/cancel_all_orders_ack.hpp"
-#include "roq/aster_futures/json/cancel_order_ack.hpp"
-#include "roq/aster_futures/json/modify_order_ack.hpp"
-#include "roq/aster_futures/json/place_order_ack.hpp"
+#include "roq/aster_futures/protocol/json/cancel_all_orders_ack.hpp"
+#include "roq/aster_futures/protocol/json/cancel_order_ack.hpp"
+#include "roq/aster_futures/protocol/json/modify_order_ack.hpp"
+#include "roq/aster_futures/protocol/json/place_order_ack.hpp"
 
 namespace roq {
 namespace aster_futures {
@@ -97,32 +97,32 @@ struct OrderEntry final : public web::rest::Client::Handler {
   // account_info
   void get_account_info();
   void get_account_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<json::AccountInfo> const &);
+  void operator()(Trace<protocol::json::AccountInfo> const &);
 
   // account_assets
   void get_account_assets();
   void get_account_assets_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<json::AccountAssets> const &);
+  void operator()(Trace<protocol::json::AccountAssets> const &);
 
   // position_info
   void get_position_info();
   void get_position_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<json::PositionInfo> const &);
+  void operator()(Trace<protocol::json::PositionInfo> const &);
 
   // open_orders
   void get_open_orders();
   void get_open_orders_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<json::OpenOrders> const &);
+  void operator()(Trace<protocol::json::OpenOrders> const &);
 
   // fill_history
   void get_fill_history();
   void get_fill_history_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<json::FillHistory> const &);
+  void operator()(Trace<protocol::json::FillHistory> const &);
 
   // place_order
   void place_order(Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id);
   void place_order_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
-  void operator()(Trace<json::PlaceOrderAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
+  void operator()(Trace<protocol::json::PlaceOrderAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
   // modify_order
   void modify_order(
@@ -132,7 +132,7 @@ struct OrderEntry final : public web::rest::Client::Handler {
       std::string_view const &request_id,
       std::string_view const &previous_request_id);
   void modify_order_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
-  void operator()(Trace<json::ModifyOrderAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
+  void operator()(Trace<protocol::json::ModifyOrderAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
   // cancel_order
   void cancel_order(
@@ -142,17 +142,17 @@ struct OrderEntry final : public web::rest::Client::Handler {
       std::string_view const &request_id,
       std::string_view const &previous_request_id);
   void cancel_order_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
-  void operator()(Trace<json::CancelOrderAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
+  void operator()(Trace<protocol::json::CancelOrderAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
   // cancel_all_orders
   void cancel_all_orders(Event<CancelAllOrders> const &, std::string_view const &request_id);
   void cancel_all_orders_ack(Trace<web::rest::Response> const &, uint8_t user_id);
-  void operator()(Trace<json::CancelAllOrdersAck> const &, uint8_t user_id);
+  void operator()(Trace<protocol::json::CancelAllOrdersAck> const &, uint8_t user_id);
 
   // countdown_cancel_all
   void countdown_cancel_all();
   void countdown_cancel_all_ack(Trace<web::rest::Response> const &);
-  // void operator()(Trace<json::CancelAllOrdersAck> const &, uint8_t user_id);
+  // void operator()(Trace<protocol::json::CancelAllOrdersAck> const &, uint8_t user_id);
 
   // helpers
 

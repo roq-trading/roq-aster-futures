@@ -4,14 +4,14 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/aster_futures/json/depth_ack.hpp"
+#include "roq/aster_futures/protocol/json/depth_ack.hpp"
 
 using namespace roq;
 using namespace roq::aster_futures;
 
 using namespace std::literals;
 
-using value_type = json::DepthAck;
+using value_type = protocol::json::DepthAck;
 
 // note! reduced
 TEST_CASE("simple", "[json_depth]") {

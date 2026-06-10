@@ -1,0 +1,14 @@
+{
+  "name": "roq/aster_futures/protocol/json/AccountInfoDataCoinConfigItem",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "coin",
+      "type": "std/string_view"
+    },
+    {
+      "name": "leverage",
+      "type": "std/double"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "name": "roq/aster_futures/protocol/json/EventType",
+  "type": "enum",
+  "values": [
+    {
+      "name": "aggTrade"
+    },
+    {
+      "name": "markPriceUpdate"
+    },
+    {
+      "name": "24hrMiniTicker"
+    },
+    {
+      "name": "24hrTicker"
+    },
+    {
+      "name": "bookTicker"
+    },
+    {
+      "name": "depthUpdate"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "roq/aster_futures/protocol/json/AckResult",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "status",
+      "type": "roq/aster_futures/protocol/json/AckResultStatus"
+    }
+  ]
+}

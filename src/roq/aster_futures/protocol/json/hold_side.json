@@ -1,0 +1,15 @@
+{
+  "name": "roq/aster_futures/protocol/json/HoldSide",
+  "type": "enum",
+  "values": [
+    {
+      "name": "long"
+    },
+    {
+      "name": "short"
+    },
+    {
+      "name": "net"
+    }
+  ]
+}

@@ -9,7 +9,7 @@ using namespace roq::aster_futures;
 
 using namespace std::literals;
 
-using value_type = json::Ticker;
+using value_type = protocol::json::Ticker;
 
 // note! truncated
 TEST_CASE("simple", "[json_ticker]") {
@@ -33,6 +33,6 @@ TEST_CASE("simple", "[json_ticker]") {
                  R"("L":62090040,)"
                  R"("n":4965243)"
                  R"(})";
-  auto helper = [](value_type const &obj) { CHECK(obj.event_type == json::EventType::_24HR_TICKER); };
+  auto helper = [](value_type const &obj) { CHECK(obj.event_type == protocol::json::EventType::_24HR_TICKER); };
   ParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }

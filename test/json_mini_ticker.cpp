@@ -9,7 +9,7 @@ using namespace roq::aster_futures;
 
 using namespace std::literals;
 
-using value_type = json::MiniTicker;
+using value_type = protocol::json::MiniTicker;
 
 // note! truncated
 TEST_CASE("simple", "[json_mini_ticker]") {
@@ -24,6 +24,6 @@ TEST_CASE("simple", "[json_mini_ticker]") {
                  R"("v":"4351982.886",)"
                  R"("q":"19582497608.36")"
                  R"(})";
-  auto helper = [](value_type const &obj) { CHECK(obj.event_type == json::EventType::_24HR_MINI_TICKER); };
+  auto helper = [](value_type const &obj) { CHECK(obj.event_type == protocol::json::EventType::_24HR_MINI_TICKER); };
   ParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }

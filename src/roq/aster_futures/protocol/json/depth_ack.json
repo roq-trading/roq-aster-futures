@@ -1,0 +1,30 @@
+{
+  "name": "roq/aster_futures/protocol/json/DepthAck",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "lastUpdateId",
+      "type": "std/uint64"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "T",
+      "name": "transaction_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "bids",
+      "type": "roq/aster_futures/protocol/json/DepthUpdateItem",
+      "array": "std/span"
+    },
+    {
+      "name": "asks",
+      "type": "roq/aster_futures/protocol/json/DepthUpdateItem",
+      "array": "std/span"
+    }
+  ]
+}

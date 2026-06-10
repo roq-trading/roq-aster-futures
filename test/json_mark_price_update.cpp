@@ -9,7 +9,7 @@ using namespace roq::aster_futures;
 
 using namespace std::literals;
 
-using value_type = json::MarkPriceUpdate;
+using value_type = protocol::json::MarkPriceUpdate;
 
 // note! truncated
 TEST_CASE("simple", "[json_mark_price_update]") {
@@ -23,6 +23,6 @@ TEST_CASE("simple", "[json_mark_price_update]") {
                  R"("r":"0.00010000",)"
                  R"("T":1759564800000)"
                  R"(})";
-  auto helper = [](value_type const &obj) { CHECK(obj.event_type == json::EventType::MARK_PRICE_UPDATE); };
+  auto helper = [](value_type const &obj) { CHECK(obj.event_type == protocol::json::EventType::MARK_PRICE_UPDATE); };
   ParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }

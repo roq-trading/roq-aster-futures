@@ -9,7 +9,7 @@ using namespace roq::aster_futures;
 
 using namespace std::literals;
 
-using value_type = json::BookTicker;
+using value_type = protocol::json::BookTicker;
 
 // note! truncated
 TEST_CASE("simple", "[json_book_ticker]") {
@@ -24,6 +24,6 @@ TEST_CASE("simple", "[json_book_ticker]") {
                  R"("T":1759572306715,)"
                  R"("E":1759572306716)"
                  R"(})";
-  auto helper = [](value_type const &obj) { CHECK(obj.event_type == json::EventType::BOOK_TICKER); };
+  auto helper = [](value_type const &obj) { CHECK(obj.event_type == protocol::json::EventType::BOOK_TICKER); };
   ParserTester<value_type>::dispatch(helper, message, 8192, 1);
 }

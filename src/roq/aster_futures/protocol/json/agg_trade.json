@@ -1,0 +1,56 @@
+{
+  "name": "roq/aster_futures/protocol/json/AggTrade",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "roq/aster_futures/protocol/json/EventType"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "s",
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "a",
+      "name": "trade_id",
+      "type": "std/int64"
+    },
+    {
+      "raw": "p",
+      "name": "price",
+      "type": "std/double"
+    },
+    {
+      "raw": "q",
+      "name": "quantity",
+      "type": "std/double"
+    },
+    {
+      "raw": "f",
+      "name": "first_trade_id",
+      "type": "std/int64"
+    },
+    {
+      "raw": "l",
+      "name": "last_trade_id",
+      "type": "std/int64"
+    },
+    {
+      "raw": "T",
+      "name": "trade_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "m",
+      "name": "is_buyer_maker",
+      "type": "std/bool"
+    }
+  ]
+}

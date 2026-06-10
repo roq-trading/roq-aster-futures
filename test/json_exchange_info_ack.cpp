@@ -4,14 +4,14 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/aster_futures/json/exchange_info_ack.hpp"
+#include "roq/aster_futures/protocol/json/exchange_info_ack.hpp"
 
 using namespace roq;
 using namespace roq::aster_futures;
 
 using namespace std::literals;
 
-using value_type = json::ExchangeInfoAck;
+using value_type = protocol::json::ExchangeInfoAck;
 
 // note! reduced
 TEST_CASE("simple", "[json_exchange_info]") {

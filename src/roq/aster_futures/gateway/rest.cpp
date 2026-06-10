@@ -11,8 +11,8 @@
 
 #include "roq/utils/metrics/factory.hpp"
 
-#include "roq/aster_futures/json/map.hpp"
-#include "roq/aster_futures/json/utils.hpp"
+#include "roq/aster_futures/protocol/json/map.hpp"
+#include "roq/aster_futures/protocol/json/utils.hpp"
 
 using namespace std::literals;
 
@@ -229,7 +229,7 @@ void Rest::get_exchange_info_ack(Trace<web::rest::Response> const &event, uint32
       if (download_.skip(sequence, state)) {
         log::info("Download state={} has already been processed"sv, state);
       } else {
-        json::ExchangeInfoAck exchange_info_ack{body, decode_buffer_};
+        protocol::json::ExchangeInfoAck exchange_info_ack{body, decode_buffer_};
         Trace event{trace_info, exchange_info_ack};
         (*this)(event);
         download_.check(state);
@@ -239,7 +239,7 @@ void Rest::get_exchange_info_ack(Trace<web::rest::Response> const &event, uint32
   });
 }
 
-void Rest::operator()(Trace<json::ExchangeInfoAck> const &event) {
+void Rest::operator()(Trace<protocol::json::ExchangeInfoAck> const &event) {
   auto &[trace_info, exchange_info_ack] = event;
   log::info<4>("exchange_info_ack={}"sv, exchange_info_ack);
   std::vector<Symbol> symbols;
@@ -255,7 +255,7 @@ void Rest::operator()(Trace<json::ExchangeInfoAck> const &event) {
     auto trade_vol_step_size = NaN;
     for (auto &filter : item.filters) {
       switch (filter.filter_type) {
-        using enum json::FilterType::type_t;
+        using enum protocol::json::FilterType::type_t;
         case UNDEFINED_INTERNAL:
           break;
         case UNKNOWN_INTERNAL:
@@ -378,7 +378,7 @@ void Rest::get_depth_ack(Trace<web::rest::Response> const &event, std::string_vi
     };
     auto handle_success = [&](auto &body) {
       log::debug("{}"sv, body);
-      json::DepthAck depth_ack{body, decode_buffer_};
+      protocol::json::DepthAck depth_ack{body, decode_buffer_};
       Trace event{trace_info, depth_ack};
       (*this)(event, symbol);
     };
@@ -386,7 +386,7 @@ void Rest::get_depth_ack(Trace<web::rest::Response> const &event, std::string_vi
   });
 }
 
-void Rest::operator()(Trace<json::DepthAck> const &event, std::string_view const &symbol) {
+void Rest::operator()(Trace<protocol::json::DepthAck> const &event, std::string_view const &symbol) {
   auto &[trace_info, depth_ack] = event;
   log::info<4>(R"(depth_ack={}, symbol="{}")"sv, depth_ack, symbol);
   auto sequence = depth_ack.last_update_id;
@@ -491,8 +491,8 @@ void Rest::process_response(web::rest::Response const &response, auto error_hand
             assert(false);
             [[fallthrough]];
           default: {
-            // json::Message error{body};
-            // XXX HANS error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, json::guess_error(error.code), error.msg);
+            // protocol::json::Message error{body};
+            // XXX HANS error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(error.code), error.msg);
           }
         }
         break;
