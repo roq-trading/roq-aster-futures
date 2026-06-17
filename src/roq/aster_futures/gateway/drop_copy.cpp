@@ -385,7 +385,7 @@ void DropCopy::operator()(Trace<protocol::json::Order> const &event) {
         .sending_time_utc = order.ts,
     };
     log::warn("DEBUG order_update={}"sv, order_update);
-    if (shared_.update_order(item.client_oid, stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {
+    if (shared_.update_order(stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {
           // no fills here
         })) {
     } else {
@@ -428,7 +428,7 @@ void DropCopy::operator()(Trace<protocol::json::Fill> const &event) {
           .user = {},
           .strategy_id = {},
       };
-      create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_NONE, client_oid);
+      create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_NONE);
       log::warn("DEBUG trade_update={}"sv, trade_update);
       shared_.fills.clear();
     }

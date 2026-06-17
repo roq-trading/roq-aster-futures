@@ -629,7 +629,7 @@ void OrderEntry::operator()(Trace<protocol::json::OpenOrders> const &event) {
     };
     log::warn("DEBUG order_update={}"sv, order_update);
     Trace event_2{trace_info, order_update};
-    (*this)(event_2, item.client_oid);
+    (*this)(event_2);
   }
 }
 
@@ -721,7 +721,7 @@ void OrderEntry::operator()(Trace<protocol::json::FillHistory> const &event) {
           .user = {},
           .strategy_id = {},
       };
-      create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_NONE, client_oid);
+      create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_NONE);
       log::warn("DEBUG trade_update={}"sv, trade_update);
       shared_.fills.clear();
     }
@@ -1200,9 +1200,9 @@ void OrderEntry::operator()(Trace<server::oms::Response> const &event, uint8_t u
   }
 }
 
-void OrderEntry::operator()(Trace<server::oms::OrderUpdate> const &event, std::string_view const &client_order_id) {
+void OrderEntry::operator()(Trace<server::oms::OrderUpdate> const &event) {
   auto &[trace_info, order_update] = event;
-  if (shared_.update_order(client_order_id, stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
+  if (shared_.update_order(stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {})) {
   } else {
     log::warn("*** EXTERNAL ORDER ***"sv);
   }
