@@ -385,12 +385,7 @@ void DropCopy::operator()(Trace<protocol::json::Order> const &event) {
         .sending_time_utc = order.ts,
     };
     log::warn("DEBUG order_update={}"sv, order_update);
-    if (shared_.update_order(stream_id_, trace_info, order_update, [&]([[maybe_unused]] auto &order) {
-          // no fills here
-        })) {
-    } else {
-      log::warn<1>(R"(*** EXTERNAL ORDER *** (order_id="{}", client_oid="{}"))"sv, item.order_id, item.client_oid);
-    }
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
   }
 }
 
