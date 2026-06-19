@@ -144,7 +144,7 @@ void Rest::operator()(ConnectionStatus connection_status, std::string_view const
       .proxy = (*connection_).get_proxy(),
   };
   log::info("stream_status={}"sv, stream_status);
-  create_trace_and_dispatch(handler_, trace_info, stream_status);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
 }
 
 void Rest::operator()(Trace<web::rest::Client::Connected> const &) {
@@ -170,7 +170,7 @@ void Rest::operator()(Trace<web::rest::Client::Latency> const &event) {
       .account = {},
       .latency = latency.sample,
   };
-  create_trace_and_dispatch(handler_, trace_info, external_latency);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, external_latency);
   latency_.ping.update(latency.sample);
 }
 
@@ -248,7 +248,7 @@ void Rest::operator()(Trace<protocol::json::ExchangeInfoAck> const &event) {
   for (size_t i = 0; i < std::size(exchange_info_ack.symbols); ++i) {
     auto &item = exchange_info_ack.symbols[i];
     log::info<2>("item={}"sv, item);
-    auto discard = shared_.discard_symbol(item.symbol);
+    auto discard = shared_.dispatcher.discard_symbol(item.symbol);
     auto tick_size = NaN;
     auto min_trade_vol = NaN;
     auto max_trade_vol = NaN;
@@ -314,7 +314,7 @@ void Rest::operator()(Trace<protocol::json::ExchangeInfoAck> const &event) {
         .sending_time_utc = exchange_info_ack.server_time,
         .discard = discard,
     };
-    create_trace_and_dispatch(handler_, trace_info, reference_data, true);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, reference_data, true);
     if (discard) {
       log::info<1>(R"(Drop symbol="{}")"sv, item.symbol);
       continue;
@@ -328,7 +328,7 @@ void Rest::operator()(Trace<protocol::json::ExchangeInfoAck> const &event) {
         .exchange_sequence = {},
         .sending_time_utc = exchange_info_ack.server_time,
     };
-    create_trace_and_dispatch(handler_, trace_info, market_status, true);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, market_status, true);
     if (shared_.all_symbols.emplace(item.symbol).second) {  // only include new
       symbols.emplace_back(item.symbol);
     }
@@ -436,8 +436,7 @@ void Rest::operator()(Trace<protocol::json::DepthAck> const &event, std::string_
           .checksum = {},
       };
       auto apply_updates = [&](auto &market_by_price) { sequencer.apply(market_by_price, sequence, false); };
-      Trace event{trace_info, market_by_price_update};
-      shared_(event, true, apply_updates);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, market_by_price_update, true, apply_updates);
     };
     auto request_snapshot = [&](auto retries) {
       log::info(R"(DEBUG REQUEST SNAPSHOT symbol="{}", retries={})"sv, symbol, retries);

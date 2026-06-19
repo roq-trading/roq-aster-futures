@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include <chrono>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "roq/api.hpp"
+
 #include "roq/server.hpp"
 
 #include "roq/utils/container.hpp"
@@ -30,36 +29,26 @@ struct Shared final {
 
   Shared(Shared const &) = delete;
 
-  auto discard_symbol(std::string_view const &name) const { return dispatcher.discard_symbol(name); }
+  Instrument &get_instrument(std::string_view const &symbol);
 
-  template <typename... Args>
-  auto operator()(Args &&...args) {
-    return dispatcher(std::forward<Args>(args)...);
-  }
-
- public:
   server::Dispatcher &dispatcher;
+
+  Settings const &settings;
+  API const api;
+
+  core::limit::RateLimiter rate_limiter;
+
+  core::Symbols symbols;
+  utils::unordered_set<std::string> all_symbols;
+
+  core::TimerQueue<std::string> depth_request_queue;
 
   std::vector<MBPUpdate> bids, asks, final_bids, final_asks;
   std::vector<Trade> trades;
   std::vector<Fill> fills;
 
- public:
-  Settings const &settings;
-  API const api;
-  core::limit::RateLimiter rate_limiter;
-  core::Symbols symbols;
-  utils::unordered_set<std::string> all_symbols;
-
- public:
-  // instrument
-  Instrument &get_instrument(std::string_view const &symbol);
-
  private:
   utils::unordered_map<std::string, Instrument> instruments_;
-
- public:
-  core::TimerQueue<std::string> depth_request_queue;
 };
 
 }  // namespace gateway

@@ -167,7 +167,7 @@ void MarketData::operator()(web::socket::Client::Latency const &latency) {
       .account = {},
       .latency = latency.sample,
   };
-  create_trace_and_dispatch(handler_, trace_info, external_latency);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, external_latency);
   latency_.ping.update(latency.sample);
 }
 
@@ -198,7 +198,7 @@ void MarketData::operator()(ConnectionStatus connection_status, std::string_view
       .proxy = (*connection_).get_proxy(),
   };
   log::info("stream_status={}"sv, stream_status);
-  create_trace_and_dispatch(handler_, trace_info, stream_status);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
 }
 
 void MarketData::subscribe(std::span<Symbol const> const &symbols) {
@@ -299,7 +299,7 @@ void MarketData::operator()(Trace<protocol::json::AggTrade> const &event) {
         .exchange_sequence = {},
         .sending_time_utc = utils::safe_cast(agg_trade.event_time),
     };
-    create_trace_and_dispatch(handler_, trace_info, trade_summary, true);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, trade_summary, true);
   });
 }
 
@@ -343,7 +343,7 @@ void MarketData::operator()(Trace<protocol::json::MarkPriceUpdate> const &event)
         .exchange_sequence = {},
         .sending_time_utc = mark_price_update.event_time,
     };
-    create_trace_and_dispatch(handler_, trace_info, statistics_update, true);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, statistics_update, true);
   });
 }
 
@@ -394,7 +394,7 @@ void MarketData::operator()(Trace<protocol::json::MiniTicker> const &event) {
         .exchange_sequence = {},
         .sending_time_utc = mini_ticker.event_time,
     };
-    create_trace_and_dispatch(handler_, trace_info, statistics_update, true);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, statistics_update, true);
   });
 }
 
@@ -425,7 +425,7 @@ void MarketData::operator()(Trace<protocol::json::BookTicker> const &event) {
         .exchange_sequence = utils::safe_cast(book_ticker.order_book_update_id),
         .sending_time_utc = book_ticker.event_time,
     };
-    create_trace_and_dispatch(handler_, trace_info, top_of_book, true);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, top_of_book, true);
   });
 }
 
@@ -479,7 +479,7 @@ void MarketData::operator()(Trace<protocol::json::DepthUpdate> const &event) {
       };
       auto publish_update = [&](auto &bids, auto &asks) {
         auto market_by_price_update = create_update(bids, asks, UpdateType::INCREMENTAL, last_sequence);
-        create_trace_and_dispatch(handler_, trace_info, market_by_price_update, true);
+        create_trace_and_dispatch(shared_.dispatcher, trace_info, market_by_price_update, true, shared_.final_bids, shared_.final_asks);
       };
       auto publish_snapshot = [&](auto &bids, auto &asks, auto sequence, auto retries, auto delay) {
         log::info(
@@ -490,8 +490,7 @@ void MarketData::operator()(Trace<protocol::json::DepthUpdate> const &event) {
             std::chrono::duration_cast<std::chrono::milliseconds>(delay));
         auto market_by_price_update = create_update(bids, asks, UpdateType::SNAPSHOT, sequencer.last_sequence());
         auto apply_updates = [&](auto &market_by_price) { sequencer.apply(market_by_price, sequence, false); };
-        Trace event{trace_info, market_by_price_update};
-        shared_(event, true, apply_updates);
+        create_trace_and_dispatch(shared_.dispatcher, trace_info, market_by_price_update, true, apply_updates);
       };
       auto request_snapshot = [&](auto retries) {
         log::info(R"(DEBUG REQUEST SNAPSHOT symbol="{}", retries={})"sv, depth_update.symbol, retries);

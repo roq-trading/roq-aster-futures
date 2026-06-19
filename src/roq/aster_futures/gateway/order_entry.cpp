@@ -222,7 +222,7 @@ void OrderEntry::operator()(Trace<web::rest::Client::Latency> const &event) {
       .account = account_.name,
       .latency = latency.sample,
   };
-  create_trace_and_dispatch(handler_, trace_info, external_latency);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, external_latency);
   latency_.ping.update(latency.sample);
 }
 
@@ -245,7 +245,7 @@ void OrderEntry::operator()(ConnectionStatus connection_status, std::string_view
       .proxy = (*connection_).get_proxy(),
   };
   log::info("stream_status={}"sv, stream_status);
-  create_trace_and_dispatch(handler_, trace_info, stream_status);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
 }
 
 uint32_t OrderEntry::download(State state) {
@@ -436,7 +436,7 @@ void OrderEntry::operator()(Trace<protocol::json::AccountAssets> const &event) {
         .sending_time_utc = account_assets.request_time,
     };
     log::warn("DEBUG funds_update={}"sv, funds_update);
-    create_trace_and_dispatch(handler_, trace_assets, funds_update, true);
+    create_trace_and_dispatch(shared_.dispatcher, trace_assets, funds_update, true);
   }
 }
 
@@ -527,7 +527,7 @@ void OrderEntry::operator()(Trace<protocol::json::PositionInfo> const &event) {
         .sending_time_utc = position_info.request_time,
     };
     log::warn("DEBUG position_update={}"sv, position_update);
-    create_trace_and_dispatch(handler_, trace_info, position_update, true);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, position_update, true);
   }
 }
 
@@ -720,7 +720,7 @@ void OrderEntry::operator()(Trace<protocol::json::FillHistory> const &event) {
           .user = {},
           .strategy_id = {},
       };
-      create_trace_and_dispatch(handler_, trace_info, trade_update, true, SOURCE_NONE);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, trade_update, true, SOURCE_NONE);
       log::warn("DEBUG trade_update={}"sv, trade_update);
       shared_.fills.clear();
     }
@@ -1077,7 +1077,7 @@ void OrderEntry::cancel_all_orders_ack(Trace<web::rest::Response> const &event, 
       };
       TraceInfo trace_info;
       Trace event_2{trace_info, cancel_all_orders_ack};
-      shared_(event_2);
+      shared_.dispatcher(event_2);
     };
     auto handle_success = [&](auto &body) {
       protocol::json::CancelAllOrdersAck cancel_all_orders_ack{body, decode_buffer_};
