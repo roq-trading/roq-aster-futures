@@ -3,8 +3,6 @@
 #pragma once
 
 #include <string>
-#include <string_view>
-#include <vector>
 
 #include "roq/utils/metrics/counter.hpp"
 #include "roq/utils/metrics/latency.hpp"
@@ -70,9 +68,13 @@ struct OrderEntry final : public web::rest::Client::Handler {
   uint16_t operator()(Event<CancelAllOrders> const &, std::string_view const &request_id);
 
  protected:
+  // web::rest::Client::Handler
+
   void operator()(Trace<web::rest::Client::Connected> const &) override;
   void operator()(Trace<web::rest::Client::Disconnected> const &) override;
   void operator()(Trace<web::rest::Client::Latency> const &) override;
+
+  // helpers
 
   void operator()(ConnectionStatus, std::string_view const &reason = {});
 
@@ -88,37 +90,44 @@ struct OrderEntry final : public web::rest::Client::Handler {
 
   uint32_t download(State state);
 
-  // account_info
+  // account-info
+
   void get_account_info();
   void get_account_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<protocol::json::AccountInfo> const &);
 
-  // account_assets
+  // account-assets
+
   void get_account_assets();
   void get_account_assets_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<protocol::json::AccountAssets> const &);
 
-  // position_info
+  // position-info
+
   void get_position_info();
   void get_position_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<protocol::json::PositionInfo> const &);
 
-  // open_orders
+  // open-orders
+
   void get_open_orders();
   void get_open_orders_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<protocol::json::OpenOrders> const &);
 
-  // fill_history
+  // fill-history
+
   void get_fill_history();
   void get_fill_history_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<protocol::json::FillHistory> const &);
 
-  // place_order
+  // place-order
+
   void place_order(Event<CreateOrder> const &, server::oms::Order const &, server::oms::RefData const &, std::string_view const &request_id);
   void place_order_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
   void operator()(Trace<protocol::json::PlaceOrderAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
-  // modify_order
+  // modify-order
+
   void modify_order(
       Event<ModifyOrder> const &,
       server::oms::Order const &,
@@ -128,7 +137,8 @@ struct OrderEntry final : public web::rest::Client::Handler {
   void modify_order_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
   void operator()(Trace<protocol::json::ModifyOrderAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
-  // cancel_order
+  // cancel-order
+
   void cancel_order(
       Event<CancelOrder> const &,
       server::oms::Order const &,
@@ -138,12 +148,14 @@ struct OrderEntry final : public web::rest::Client::Handler {
   void cancel_order_ack(Trace<web::rest::Response> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
   void operator()(Trace<protocol::json::CancelOrderAck> const &, uint8_t user_id, uint64_t order_id, uint32_t version);
 
-  // cancel_all_orders
+  // cancel-all-orders
+
   void cancel_all_orders(Event<CancelAllOrders> const &, std::string_view const &request_id);
   void cancel_all_orders_ack(Trace<web::rest::Response> const &, uint8_t user_id);
   void operator()(Trace<protocol::json::CancelAllOrdersAck> const &, uint8_t user_id);
 
-  // countdown_cancel_all
+  // countdown-cancel-all
+
   void countdown_cancel_all();
   void countdown_cancel_all_ack(Trace<web::rest::Response> const &);
   // void operator()(Trace<protocol::json::CancelAllOrdersAck> const &, uint8_t user_id);

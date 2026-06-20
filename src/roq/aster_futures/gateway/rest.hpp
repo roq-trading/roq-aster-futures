@@ -3,8 +3,6 @@
 #pragma once
 
 #include <string>
-#include <string_view>
-#include <vector>
 
 #include "roq/utils/metrics/counter.hpp"
 #include "roq/utils/metrics/latency.hpp"
@@ -18,9 +16,6 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
-#include "roq/server.hpp"
-
-#include "roq/aster_futures/gateway/account.hpp"
 #include "roq/aster_futures/gateway/shared.hpp"
 
 #include "roq/aster_futures/protocol/json/depth_ack.hpp"
@@ -52,9 +47,13 @@ struct Rest final : public web::rest::Client::Handler {
   void operator()(metrics::Writer &) const;
 
  protected:
+  // web::rest::Client::Handler
+
   void operator()(Trace<web::rest::Client::Connected> const &) override;
   void operator()(Trace<web::rest::Client::Disconnected> const &) override;
   void operator()(Trace<web::rest::Client::Latency> const &) override;
+
+  // helpers
 
   void operator()(ConnectionStatus, std::string_view const &reason = {});
 
@@ -66,13 +65,19 @@ struct Rest final : public web::rest::Client::Handler {
 
   uint32_t download(State);
 
+  // exchange-info
+
   void get_exchange_info();
   void get_exchange_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<protocol::json::ExchangeInfoAck> const &);
 
+  // depth
+
   void get_depth(std::string_view const &symbol);
   void get_depth_ack(Trace<web::rest::Response> const &, std::string_view const &symbol);
   void operator()(Trace<protocol::json::DepthAck> const &, std::string_view const &symbol);
+
+  // helpers
 
   void check_request_queue(std::chrono::nanoseconds now);
 

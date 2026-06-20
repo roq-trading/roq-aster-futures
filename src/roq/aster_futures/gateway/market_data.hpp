@@ -2,11 +2,7 @@
 
 #pragma once
 
-#include <deque>
 #include <string>
-#include <string_view>
-#include <utility>
-#include <vector>
 
 #include "roq/utils/metrics/counter.hpp"
 #include "roq/utils/metrics/latency.hpp"
@@ -21,8 +17,6 @@
 #include "roq/web/socket/client.hpp"
 
 #include "roq/core/json/buffer_stack.hpp"
-
-#include "roq/server.hpp"
 
 #include "roq/aster_futures/gateway/shared.hpp"
 
@@ -52,6 +46,8 @@ struct MarketData final : public web::socket::Client::Handler, public protocol::
   void subscribe(size_t start_from = 0);
 
  protected:
+  // web::socket::Client::Handler
+
   void operator()(web::socket::Client::Connected const &) override;
   void operator()(web::socket::Client::Disconnected const &) override;
   void operator()(web::socket::Client::Ready const &) override;
@@ -60,7 +56,8 @@ struct MarketData final : public web::socket::Client::Handler, public protocol::
   void operator()(web::socket::Client::Text const &) override;
   void operator()(web::socket::Client::Binary const &) override;
 
- private:
+  // helpers
+
   void operator()(ConnectionStatus, std::string_view const &reason = {});
 
   void subscribe(std::span<Symbol const> const &symbols);
@@ -69,6 +66,8 @@ struct MarketData final : public web::socket::Client::Handler, public protocol::
   void check_request_queue(std::chrono::nanoseconds now);
 
   void parse(std::string_view const &message);
+
+  // protocol::json::Parser::Handler
 
   void operator()(Trace<protocol::json::Pong> const &) override;
   void operator()(Trace<protocol::json::Ack> const &) override;
