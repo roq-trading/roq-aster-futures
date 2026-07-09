@@ -6,10 +6,10 @@
 
 namespace roq {
 namespace aster_futures {
-namespace proto_bridge {
+namespace bridge {
 
 using Config = gateway::Config;
 
-}  // namespace proto_bridge
+}  // namespace bridge
 }  // namespace aster_futures
 }  // namespace roq
