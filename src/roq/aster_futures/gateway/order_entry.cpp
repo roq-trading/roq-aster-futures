@@ -597,6 +597,7 @@ void OrderEntry::operator()(Trace<protocol::json::OpenOrders> const &event) {
         .order_type = map(item.order_type),
         .time_in_force = map(item.time_in_force),
         .execution_instructions = {},  // XXX map from time_in_force + reduce_only
+        .execution_destination = {},
         .create_time_utc = item.created_time,
         .update_time_utc = item.updated_time,
         .external_account = {},
