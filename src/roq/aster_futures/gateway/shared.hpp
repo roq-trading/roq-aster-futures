@@ -20,6 +20,8 @@
 #include "roq/aster_futures/gateway/instrument.hpp"
 #include "roq/aster_futures/gateway/settings.hpp"
 
+#include "roq/aster_futures/tools/rate_limit.hpp"
+
 namespace roq {
 namespace aster_futures {
 namespace gateway {
@@ -35,6 +37,8 @@ struct Shared final {
 
   Settings const &settings;
   API const api;
+
+  tools::RateLimit rate_limit;
 
   core::limit::RateLimiter rate_limiter;
 
