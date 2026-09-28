@@ -20,7 +20,7 @@
 #include "roq/aster_futures/gateway/instrument.hpp"
 #include "roq/aster_futures/gateway/settings.hpp"
 
-#include "roq/aster_futures/tools/rate_limit.hpp"
+#include "roq/aster_futures/tools/throttle.hpp"
 
 namespace roq {
 namespace aster_futures {
@@ -38,7 +38,7 @@ struct Shared final {
   Settings const &settings;
   API const api;
 
-  tools::RateLimit rate_limit;
+  tools::Throttle throttle;
 
   core::limit::RateLimiter rate_limiter;
 
