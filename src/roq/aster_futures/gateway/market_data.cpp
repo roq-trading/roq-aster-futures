@@ -282,6 +282,8 @@ void MarketData::operator()(Trace<protocol::json::AggTrade> const &event) {
     auto &[trace_info, agg_trade] = event;
     log::info<4>("agg_trade={}"sv, agg_trade);
     auto trade = Trade{
+        .trade_conditions = {},
+        .trade_type = {},
         .side = agg_trade.is_buyer_maker ? Side::SELL : Side::BUY,  // note! we need the side of the taker
         .price = agg_trade.price,
         .quantity = agg_trade.quantity,
