@@ -12,11 +12,14 @@
 
 #include "roq/web/rest/client.hpp"
 
-#include "roq/core/download.hpp"
+#include "roq/core/download_2.hpp"
 
 #include "roq/core/json/buffer_stack.hpp"
 
+#include "roq/server/stream.hpp"
+
 #include "roq/aster_futures/gateway/shared.hpp"
+#include "roq/aster_futures/gateway/symbols_update.hpp"
 
 #include "roq/aster_futures/protocol/json/depth_ack.hpp"
 #include "roq/aster_futures/protocol/json/exchange_info_ack.hpp"
@@ -25,26 +28,29 @@ namespace roq {
 namespace aster_futures {
 namespace gateway {
 
-struct Rest final : public web::rest::Client::Handler {
-  struct SymbolsUpdate final {
-    std::span<Symbol const> symbols;
-  };
-
+struct Rest final : public Base<Rest>, public server::Stream, public web::rest::Client::Handler {
   struct Handler {
-    virtual void operator()(SymbolsUpdate &) = 0;
+    virtual void operator()(Trace<SymbolsUpdate> const &) = 0;
   };
 
   Rest(Handler &, io::Context &context, uint16_t stream_id, Shared &);
 
-  Rest(Rest const &) = delete;
+  // protected:
+  friend base_type;
 
-  bool ready() const { return connection_status_ == ConnectionStatus::READY; }
+  // server::Stream
 
-  void operator()(Event<Start> const &);
-  void operator()(Event<Stop> const &);
-  void operator()(Event<Timer> const &);
+  uint16_t stream_id() const override { return stream_id_; }
 
-  void operator()(metrics::Writer &) const;
+  bool ready() const override { return connection_status_ == ConnectionStatus::READY; }
+
+  void operator()(Event<Start> const &) override;
+  void operator()(Event<Stop> const &) override;
+  void operator()(Event<Timer> const &) override;
+
+  void operator()(metrics::Writer &) const override;
+
+  void operator()(Trace<ConnectionStatus> const &, std::string_view const &reason = {}) override;
 
  protected:
   // web::rest::Client::Handler
@@ -53,9 +59,7 @@ struct Rest final : public web::rest::Client::Handler {
   void operator()(Trace<web::rest::Disconnected> const &) override;
   void operator()(Trace<web::rest::Latency> const &) override;
 
-  // helpers
-
-  void operator()(ConnectionStatus, std::string_view const &reason = {});
+  // Download
 
   enum class State {
     UNDEFINED = 0,
@@ -63,7 +67,7 @@ struct Rest final : public web::rest::Client::Handler {
     DONE,
   };
 
-  uint32_t download(State);
+  int32_t download(Trace<State> const &);
 
   // exchange-info
 
@@ -106,7 +110,7 @@ struct Rest final : public web::rest::Client::Handler {
   Shared &shared_;
   // state
   ConnectionStatus connection_status_ = {};
-  core::Download<State> download_;
+  core::Download2<State> download_;
 };
 
 }  // namespace gateway

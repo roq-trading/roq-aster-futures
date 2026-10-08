@@ -110,10 +110,13 @@ void Controller::operator()(Event<Subscribe> const &event) {
       log::warn(R"(*** DUPLICATE SUBSCRIPTION *** (symbol="{}")"sv, item);
     }
   }
-  auto symbols_update = Rest::SymbolsUpdate{
+  auto symbols_update = SymbolsUpdate{
       .symbols = symbols,
   };
-  (*this)(symbols_update);
+  TraceInfo trace_info{message_info};
+  Trace event_2{trace_info, symbols_update};
+  (*this)(event_2);
+  // create_trace_and_dispatch_2(message_info, symbols_update);
 }
 
 uint16_t Controller::operator()(
@@ -163,7 +166,8 @@ void Controller::operator()(metrics::Writer &writer) const {
 
 // Rest::Handler
 
-void Controller::operator()(Rest::SymbolsUpdate &symbols_update) {
+void Controller::operator()(Trace<SymbolsUpdate> const &event) {
+  auto &[trace_info, symbols_update] = event;
   auto [size, start_from] = shared_.symbols(symbols_update.symbols);
   ensure_symbol_slices(size);
   for (auto &iter : market_data_) {

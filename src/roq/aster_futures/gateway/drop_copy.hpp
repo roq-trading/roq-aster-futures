@@ -14,6 +14,8 @@
 
 #include "roq/core/json/buffer_stack.hpp"
 
+#include "roq/server/stream.hpp"
+
 #include "roq/aster_futures/gateway/account.hpp"
 #include "roq/aster_futures/gateway/shared.hpp"
 
@@ -23,20 +25,27 @@ namespace roq {
 namespace aster_futures {
 namespace gateway {
 
-struct DropCopy final : public web::socket::Client::Handler, protocol::json::Parser::Handler {
+struct DropCopy final : public Base<DropCopy>, public server::Stream, public web::socket::Client::Handler, protocol::json::Parser::Handler {
   struct Handler {};
 
   DropCopy(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &);
 
-  DropCopy(DropCopy const &) = delete;
+  // protected:
+  friend base_type;
 
-  bool ready() const;
+  // server::Stream
 
-  void operator()(Event<Start> const &);
-  void operator()(Event<Stop> const &);
-  void operator()(Event<Timer> const &);
+  uint16_t stream_id() const override { return stream_id_; }
 
-  void operator()(metrics::Writer &) const;
+  bool ready() const override;
+
+  void operator()(Event<Start> const &) override;
+  void operator()(Event<Stop> const &) override;
+  void operator()(Event<Timer> const &) override;
+
+  void operator()(metrics::Writer &) const override;
+
+  void operator()(Trace<ConnectionStatus> const &, std::string_view const &reason = {}) override;
 
  protected:
   // web::socket::Client::Handler
@@ -68,8 +77,6 @@ struct DropCopy final : public web::socket::Client::Handler, protocol::json::Par
   void operator()(Trace<protocol::json::Fill> const &) override;
 
   // helpers
-
-  void operator()(ConnectionStatus, std::string_view const &reason = {});
 
   void login();
 
