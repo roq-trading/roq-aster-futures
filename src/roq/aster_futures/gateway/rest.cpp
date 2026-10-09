@@ -212,11 +212,8 @@ void Rest::get_exchange_info() {
         .quality_of_service = {},
     };
     auto sequence = download_.sequence();
-    (*connection_)("exchange_info"sv, request, [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_exchange_info_ack(event, sequence);
-    });
+    auto callback = [this, sequence](auto &event, [[maybe_unused]] auto &request_id) { get_exchange_info_ack(event, sequence); };
+    (*connection_)(request, callback, "exchange_info"sv);
   });
 }
 
@@ -353,11 +350,7 @@ void Rest::operator()(Trace<protocol::json::ExchangeInfoAck> const &event) {
 
 void Rest::get_depth(std::string_view const &symbol) {
   profile_.depth([&]() {
-    auto callback = [this, symbol = std::string{symbol}]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_depth_ack(event, symbol);
-    };
+    auto callback = [this, symbol = std::string{symbol}](auto &event, [[maybe_unused]] auto &request_id) { get_depth_ack(event, symbol); };
     auto query = fmt::format("?symbol={}&limit={}"sv, symbol, shared_.settings.mbp.max_depth);
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
@@ -369,7 +362,7 @@ void Rest::get_depth(std::string_view const &symbol) {
         .body = {},
         .quality_of_service = {},
     };
-    (*connection_)("depth"sv, request, callback);
+    (*connection_)(request, callback, "depth"sv);
   });
 }
 

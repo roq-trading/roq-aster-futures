@@ -312,11 +312,8 @@ void OrderEntry::get_account_info() {
     };
     log::warn("DEBUG request={}"sv, request);
     auto sequence = download_.sequence();
-    (*connection_)("account_info"sv, request, [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_account_info_ack(event, sequence);
-    });
+    auto callback = [this, sequence](auto &event, [[maybe_unused]] auto &request_id) { get_account_info_ack(event, sequence); };
+    (*connection_)(request, callback, "account_info"sv);
   });
 }
 
@@ -385,11 +382,8 @@ void OrderEntry::get_account_assets() {
         .quality_of_service = {},
     };
     auto sequence = download_.sequence();
-    (*connection_)("account_assets"sv, request, [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_account_assets_ack(event, sequence);
-    });
+    auto callback = [this, sequence](auto &event, [[maybe_unused]] auto &request_id) { get_account_assets_ack(event, sequence); };
+    (*connection_)(request, callback, "account_assets"sv);
   });
 }
 
@@ -464,11 +458,8 @@ void OrderEntry::get_position_info() {
         .quality_of_service = {},
     };
     auto sequence = download_.sequence();
-    (*connection_)("position_info"sv, request, [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_position_info_ack(event, sequence);
-    });
+    auto callback = [this, sequence](auto &event, [[maybe_unused]] auto &request_id) { get_position_info_ack(event, sequence); };
+    (*connection_)(request, callback, "position_info"sv);
   });
 }
 
@@ -554,11 +545,8 @@ void OrderEntry::get_open_orders() {
         .quality_of_service = {},
     };
     auto sequence = download_.sequence();
-    (*connection_)("open_orders"sv, request, [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_open_orders_ack(event, sequence);
-    });
+    auto callback = [this, sequence](auto &event, [[maybe_unused]] auto &request_id) { get_open_orders_ack(event, sequence); };
+    (*connection_)(request, callback, "open_orders"sv);
   });
 }
 
@@ -657,11 +645,8 @@ void OrderEntry::get_fill_history() {
         .quality_of_service = {},
     };
     auto sequence = download_.sequence();
-    (*connection_)("fill_history"sv, request, [this, sequence]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      get_fill_history_ack(event, sequence);
-    });
+    auto callback = [this, sequence](auto &event, [[maybe_unused]] auto &request_id) { get_fill_history_ack(event, sequence); };
+    (*connection_)(request, callback, "fill_history"sv);
   });
 }
 
@@ -806,13 +791,11 @@ void OrderEntry::place_order(
         .body = body,
         .quality_of_service = {},
     };
-    auto callback = [this, user_id = message_info.source, order_id = create_order.order_id]([[maybe_unused]] auto &request_id, auto &response) {
+    auto callback = [this, user_id = message_info.source, order_id = create_order.order_id](auto &event, [[maybe_unused]] auto &request_id) {
       uint32_t version = 1;
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
       place_order_ack(event, user_id, order_id, version);
     };
-    (*connection_)(request_id, request, callback);
+    (*connection_)(request, callback, request_id);
   });
 }
 
@@ -888,12 +871,8 @@ void OrderEntry::modify_order(
         .quality_of_service = {},
     };
     auto callback = [this, user_id = message_info.source, order_id = modify_order.order_id, version = modify_order.version](
-                        [[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      modify_order_ack(event, user_id, order_id, version);
-    };
-    (*connection_)(request_id, request, callback);
+                        auto &event, [[maybe_unused]] auto &request_id) { modify_order_ack(event, user_id, order_id, version); };
+    (*connection_)(request, callback, request_id);
   });
 }
 
@@ -969,12 +948,8 @@ void OrderEntry::cancel_order(
         .quality_of_service = {},
     };
     auto callback = [this, user_id = message_info.source, order_id = cancel_order.order_id, version = cancel_order.version](
-                        [[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      cancel_order_ack(event, user_id, order_id, version);
-    };
-    (*connection_)(request_id, request, callback);
+                        auto &event, [[maybe_unused]] auto &request_id) { cancel_order_ack(event, user_id, order_id, version); };
+    (*connection_)(request, callback, request_id);
   });
 }
 
@@ -1043,12 +1018,8 @@ void OrderEntry::cancel_all_orders(Event<CancelAllOrders> const &event, std::str
         .body = body,
         .quality_of_service = {},
     };
-    auto callback = [this, user_id = message_info.source]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      cancel_all_orders_ack(event, user_id);
-    };
-    (*connection_)(request_id, request, callback);
+    auto callback = [this, user_id = message_info.source](auto &event, [[maybe_unused]] auto &request_id) { cancel_all_orders_ack(event, user_id); };
+    (*connection_)(request, callback, request_id);
   });
 }
 
@@ -1114,12 +1085,8 @@ void OrderEntry::countdown_cancel_all() {
         .body = body,
         .quality_of_service = {},
     };
-    auto callback = [this]([[maybe_unused]] auto &request_id, auto &response) {
-      TraceInfo trace_info;
-      Trace event{trace_info, response};
-      countdown_cancel_all_ack(event);
-    };
-    (*connection_)("countdown_cancel_all"sv, request, callback);
+    auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { countdown_cancel_all_ack(event); };
+    (*connection_)(request, callback, "countdown_cancel_all"sv);
   });
 }
 
