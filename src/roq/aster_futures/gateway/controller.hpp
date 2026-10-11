@@ -39,6 +39,8 @@ struct Controller final : public Base<Controller>,
   Controller(Controller const &) = delete;
 
  protected:
+  friend base_type;
+
   // server::Handler
 
   void operator()(Trace<Start> const &) override;
@@ -79,7 +81,7 @@ struct Controller final : public Base<Controller>,
 
   // helpers
 
-  void ensure_symbol_slices(size_t size);
+  void ensure_symbol_slices(TraceInfo const &, size_t size);
 
   template <typename... Args>
   void dispatch(Args &&...);

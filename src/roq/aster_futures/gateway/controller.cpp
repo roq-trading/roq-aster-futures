@@ -97,10 +97,7 @@ void Controller::operator()(Event<Subscribe> const &event) {
   auto symbols_update = SymbolsUpdate{
       .symbols = symbols,
   };
-  TraceInfo trace_info{message_info};
-  Trace event_2{trace_info, symbols_update};
-  (*this)(event_2);
-  // create_trace_and_dispatch_2(message_info, symbols_update);
+  create_trace_and_dispatch_2(message_info, symbols_update);
 }
 
 void Controller::operator()(Event<Control> const &event) {
@@ -121,8 +118,9 @@ void Controller::operator()(Event<Control> const &event) {
 
 uint16_t Controller::operator()(
     Event<CreateOrder> const &event, server::oms::Order const &order, server::oms::RefData const &ref_data, std::string_view const &request_id) {
-  assert(!std::empty(event.value.account));
-  return get_order_entry(event.value.account)(event, order, ref_data, request_id);
+  auto &[message_info, create_order] = event;
+  assert(!std::empty(create_order.account));
+  return get_order_entry(create_order.account)(event, order, ref_data, request_id);
 }
 
 uint16_t Controller::operator()(
@@ -131,9 +129,10 @@ uint16_t Controller::operator()(
     server::oms::RefData const &ref_data,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
-  assert(!std::empty(event.value.account));
-  assert(event.value.account == order.account);
-  return get_order_entry(event.value.account)(event, order, ref_data, request_id, previous_request_id);
+  auto &[message_info, modify_order] = event;
+  assert(!std::empty(modify_order.account));
+  assert(modify_order.account == order.account);
+  return get_order_entry(modify_order.account)(event, order, ref_data, request_id, previous_request_id);
 }
 
 uint16_t Controller::operator()(
@@ -142,14 +141,16 @@ uint16_t Controller::operator()(
     server::oms::RefData const &ref_data,
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
-  assert(!std::empty(event.value.account));
-  assert(event.value.account == order.account);
-  return get_order_entry(event.value.account)(event, order, ref_data, request_id, previous_request_id);
+  auto &[message_info, cancel_order] = event;
+  assert(!std::empty(cancel_order.account));
+  assert(cancel_order.account == order.account);
+  return get_order_entry(cancel_order.account)(event, order, ref_data, request_id, previous_request_id);
 }
 
 uint16_t Controller::operator()(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
-  assert(!std::empty(event.value.account));
-  return get_order_entry(event.value.account)(event, request_id);
+  auto &[message_info, cancel_all_orders] = event;
+  assert(!std::empty(cancel_all_orders.account));
+  return get_order_entry(cancel_all_orders.account)(event, request_id);
 }
 
 uint16_t Controller::operator()(Event<MassQuote> const &) {
@@ -169,7 +170,7 @@ void Controller::operator()(metrics::Writer &writer) const {
 void Controller::operator()(Trace<SymbolsUpdate> const &event) {
   auto &[trace_info, symbols_update] = event;
   auto [size, start_from] = shared_.symbols(symbols_update.symbols);
-  ensure_symbol_slices(size);
+  ensure_symbol_slices(trace_info, size);
   for (auto &iter : market_data_) {
     (*iter).subscribe(start_from);
   }
@@ -177,11 +178,10 @@ void Controller::operator()(Trace<SymbolsUpdate> const &event) {
 
 // utilities
 
-void Controller::ensure_symbol_slices(size_t size) {
+void Controller::ensure_symbol_slices(TraceInfo const &trace_info, size_t size) {
   while (std::size(market_data_) < size) {
     log::debug("Create market-data (user-stream)"sv);
     auto market_data = std::make_unique<MarketData>(*this, context_, ++stream_id_, shared_, std::size(market_data_));
-    TraceInfo trace_info;  // XXX FIXME TODO
     Start start;
     create_trace_and_dispatch(*market_data, trace_info, start);
     market_data_.emplace_back(std::move(market_data));
