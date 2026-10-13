@@ -10,8 +10,8 @@ namespace gateway {
 
 Shared::Shared(server::Dispatcher &dispatcher, Settings const &settings)
     : dispatcher{dispatcher}, settings{settings}, api{API::create(settings)}, throttle{settings},
-      rate_limiter(settings.misc.request_limit, settings.misc.request_limit_interval), symbols(settings.ws.max_subscriptions_per_stream),
-      depth_request_queue{settings.ws.mbp_request_delay} {
+      rate_limiter(settings.misc.request_limit, settings.misc.request_limit_interval), depth_request_queue{rate_limiter, settings.ws.mbp_request_delay},
+      symbols(settings.ws.max_subscriptions_per_stream) {
 }
 
 Instrument &Shared::get_instrument(std::string_view const &symbol) {

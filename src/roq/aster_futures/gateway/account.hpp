@@ -22,10 +22,10 @@ struct Account final {
 
   std::string_view get_headers() const { return crypto_.get_headers(); }
 
-  std::string create_ws_login();
+  std::string create_ws_login(TraceInfo const &);
 
-  std::string create_query();
-  std::string create_query(std::string_view const &query);
+  std::string create_query(TraceInfo const &);
+  std::string create_query(TraceInfo const &, std::string_view const &query);
 
   std::string const name;
 

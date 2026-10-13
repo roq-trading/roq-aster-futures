@@ -150,10 +150,10 @@ void DropCopy::operator()(Trace<ConnectionStatus> const &event, std::string_view
 
 // web::socket::Client::Handler
 
-void DropCopy::operator()(Trace<web::socket::Connected> const &) {
+void DropCopy::operator()(Trace<web::socket::Connected> const &event) {
+  auto &[trace_info, connected] = event;
   assert(logon_timeout_.count() == 0);
-  auto now = clock::get_system();
-  logon_timeout_ = now + shared_.settings.ws.request_timeout;
+  logon_timeout_ = trace_info.origin_create_time + shared_.settings.ws.request_timeout;
 }
 
 void DropCopy::operator()(Trace<web::socket::Disconnected> const &event) {
@@ -165,8 +165,9 @@ void DropCopy::operator()(Trace<web::socket::Disconnected> const &event) {
   next_ping_ = {};
 }
 
-void DropCopy::operator()(Trace<web::socket::Ready> const &) {
-  login();
+void DropCopy::operator()(Trace<web::socket::Ready> const &event) {
+  auto &[trace_info, ready] = event;
+  login(trace_info);
 }
 
 void DropCopy::operator()(Trace<web::socket::Close> const &event) {
@@ -449,8 +450,8 @@ void DropCopy::operator()(Trace<protocol::json::Fill> const &event) {
 
 // helpers
 
-void DropCopy::login() {
-  auto message = account_.create_ws_login();
+void DropCopy::login(TraceInfo const &trace_info) {
+  auto message = account_.create_ws_login(trace_info);
   log::debug("message={}"sv, message);
   (*connection_).send_text(message);
 }

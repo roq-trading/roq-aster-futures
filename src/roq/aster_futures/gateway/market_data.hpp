@@ -8,8 +8,7 @@
 #include "roq/utils/metrics/latency.hpp"
 #include "roq/utils/metrics/profile.hpp"
 
-#include "roq/core/timer_queue.hpp"
-
+#include "roq/core/limit/queue.hpp"
 #include "roq/core/limit/rate_limiter.hpp"
 
 #include "roq/io/context.hpp"
@@ -91,7 +90,7 @@ struct MarketData final : public Base<MarketData>,
   void subscribe(std::span<Symbol const> const &symbols);
   void subscribe(std::span<Symbol const> const &symbols, std::span<std::string_view const> const &streams);
 
-  void check_request_queue(std::chrono::nanoseconds now);
+  void check_request_queue(TraceInfo const &);
 
   void parse(TraceInfo const &, std::string_view const &message);
 
@@ -122,7 +121,7 @@ struct MarketData final : public Base<MarketData>,
   uint32_t request_id_ = {};
   // throttle
   core::limit::RateLimiter rate_limiter_;
-  core::TimerQueue<std::string> request_queue_;
+  core::limit::Queue<std::string> request_queue_;
 };
 
 }  // namespace gateway

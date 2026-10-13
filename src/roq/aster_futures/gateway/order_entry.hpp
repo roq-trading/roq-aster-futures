@@ -101,31 +101,31 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
 
   // account-info
 
-  void get_account_info();
+  void get_account_info(TraceInfo const &);
   void get_account_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<protocol::json::AccountInfo> const &);
 
   // account-assets
 
-  void get_account_assets();
+  void get_account_assets(TraceInfo const &);
   void get_account_assets_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<protocol::json::AccountAssets> const &);
 
   // position-info
 
-  void get_position_info();
+  void get_position_info(TraceInfo const &);
   void get_position_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<protocol::json::PositionInfo> const &);
 
   // open-orders
 
-  void get_open_orders();
+  void get_open_orders(TraceInfo const &);
   void get_open_orders_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<protocol::json::OpenOrders> const &);
 
   // fill-history
 
-  void get_fill_history();
+  void get_fill_history(TraceInfo const &);
   void get_fill_history_ack(Trace<web::rest::Response> const &, uint32_t sequence);
   void operator()(Trace<protocol::json::FillHistory> const &);
 

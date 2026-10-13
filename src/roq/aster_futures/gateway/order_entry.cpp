@@ -262,24 +262,24 @@ int32_t OrderEntry::download(Trace<State> const &event) {
       break;
     case ACCOUNT_INFO:
       create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "account-info"sv);
-      get_account_info();
+      get_account_info(trace_info);
       return 1;
     case ACCOUNT_ASSETS:  // skip
       create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "account-assets"sv);
-      get_account_assets();
+      get_account_assets(trace_info);
       return 1;
     case POSITION_INFO:  // skip
       create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "position-info"sv);
-      get_position_info();
+      get_position_info(trace_info);
       return 1;
     case OPEN_ORDERS:
       create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "open-orders"sv);
-      get_open_orders();
+      get_open_orders(trace_info);
       return 1;
     case FILL_HISTORY:
       if (shared_.settings.rest.download_fills_begin.count()) {
         create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "fill-history"sv);
-        get_fill_history();
+        get_fill_history(trace_info);
         return 1;
       } else {
         return 0;
@@ -292,13 +292,13 @@ int32_t OrderEntry::download(Trace<State> const &event) {
   return 0;
 }
 
-// account_info
+// account-info
 
-void OrderEntry::get_account_info() {
+void OrderEntry::get_account_info(TraceInfo const &trace_info) {
   profile_.account_info([&]() {
     auto method = web::http::Method::GET;
     auto path = shared_.api.order_management.account_info;
-    auto query = account_.create_query();
+    auto query = account_.create_query(trace_info);
     auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
@@ -362,14 +362,14 @@ void OrderEntry::operator()(Trace<protocol::json::AccountInfo> const &event) {
   }
 }
 
-// account_assets
+// account-assets
 
-void OrderEntry::get_account_assets() {
+void OrderEntry::get_account_assets(TraceInfo const &trace_info) {
   profile_.account_assets([&]() {
     auto method = web::http::Method::GET;
     auto path = shared_.api.order_management.account_assets;
     auto query = fmt::format("?category={}"sv, shared_.api.category);
-    auto query_2 = account_.create_query(query);
+    auto query_2 = account_.create_query(trace_info, query);
     auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
@@ -438,14 +438,14 @@ void OrderEntry::operator()(Trace<protocol::json::AccountAssets> const &event) {
   }
 }
 
-// position_info
+// position-info
 
-void OrderEntry::get_position_info() {
+void OrderEntry::get_position_info(TraceInfo const &trace_info) {
   profile_.position_info([&]() {
     auto method = web::http::Method::GET;
     auto path = shared_.api.order_management.position_info;
     auto query = fmt::format("?category={}"sv, shared_.api.category);
-    auto query_2 = account_.create_query(query);
+    auto query_2 = account_.create_query(trace_info, query);
     auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
@@ -525,14 +525,14 @@ void OrderEntry::operator()(Trace<protocol::json::PositionInfo> const &event) {
   }
 }
 
-// open_orders
+// open-orders
 
-void OrderEntry::get_open_orders() {
+void OrderEntry::get_open_orders(TraceInfo const &trace_info) {
   profile_.open_orders([&]() {
     auto method = web::http::Method::GET;
     auto path = shared_.api.order_management.open_orders;
     auto query = fmt::format("?category={}"sv, shared_.api.category);
-    auto query_2 = account_.create_query(query);
+    auto query_2 = account_.create_query(trace_info, query);
     auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
@@ -623,16 +623,16 @@ void OrderEntry::operator()(Trace<protocol::json::OpenOrders> const &event) {
   }
 }
 
-// fill_history
-void OrderEntry::get_fill_history() {
+// fill-history
+
+void OrderEntry::get_fill_history(TraceInfo const &trace_info) {
   assert(shared_.settings.rest.download_fills_begin.count() > 0);
   profile_.fill_history([&]() {
-    auto now = clock::get_realtime();
-    auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(now - shared_.settings.rest.download_fills_begin);
+    auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(trace_info.origin_create_time_utc - shared_.settings.rest.download_fills_begin);
     auto method = web::http::Method::GET;
     auto path = shared_.api.order_management.fill_history;
     auto query = fmt::format("?category={}&startTime={}"sv, shared_.api.category, start_time.count());
-    auto query_2 = account_.create_query(query);
+    auto query_2 = account_.create_query(trace_info, query);
     auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
@@ -765,7 +765,7 @@ void OrderEntry::operator()(Trace<protocol::json::FillHistory> const &event) {
   dispatch();
 }
 
-// place_order
+// place-order
 
 void OrderEntry::place_order(
     Event<CreateOrder> const &event, server::oms::Order const &order, server::oms::RefData const &ref_data, std::string_view const &request_id) {
@@ -779,7 +779,7 @@ void OrderEntry::place_order(
     auto query = fmt::format("?category={}"sv, shared_.api.category);
     auto body = protocol::json::Encoder::place_order(encode_buffer_, create_order, order, ref_data, request_id, shared_.api.category);
     log::warn(R"(DEBUG body="{}")"sv, body);
-    auto query_2 = account_.create_query(query);
+    auto query_2 = account_.create_query(message_info, query);
     auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
@@ -841,7 +841,7 @@ void OrderEntry::operator()(
   log::warn("DEBUG place_order_ack={}"sv, place_order_ack);
 }
 
-// modify_order
+// modify-order
 
 void OrderEntry::modify_order(
     Event<ModifyOrder> const &event,
@@ -918,7 +918,7 @@ void OrderEntry::operator()(
   log::warn("DEBUG modify_order_ack={}"sv, modify_order_ack);
 }
 
-// cancel_order
+// cancel-order
 
 void OrderEntry::cancel_order(
     Event<CancelOrder> const &event,
@@ -995,7 +995,7 @@ void OrderEntry::operator()(
   log::warn("DEBUG cancel_order_ack={}"sv, cancel_order_ack);
 }
 
-// cancel_all_orders
+// cancel-all-orders
 
 void OrderEntry::cancel_all_orders(Event<CancelAllOrders> const &event, std::string_view const &request_id) {
   profile_.cancel_all_orders([&]() {
@@ -1066,7 +1066,7 @@ void OrderEntry::operator()(Trace<protocol::json::CancelAllOrdersAck> const &eve
   log::warn("DEBUG cancel_all_orders_ack={}"sv, cancel_all_orders_ack);
 }
 
-// countdown_cancel_all
+// countdown-cancel-all
 
 void OrderEntry::countdown_cancel_all() {
   profile_.countdown_cancel_all([&]() {

@@ -98,7 +98,7 @@ MarketData::MarketData(Handler &handler, io::Context &context, uint16_t stream_i
           .ping = create_metrics(shared.settings, name_, "ping"sv),
       },
       shared_{shared}, rate_limiter_{shared_.settings.ws.request_limit, shared_.settings.ws.request_limit_interval},
-      request_queue_{shared_.settings.ws.request_delay} {
+      request_queue_{rate_limiter_, shared_.settings.ws.request_delay} {
 }
 
 // server::Stream
@@ -115,7 +115,7 @@ void MarketData::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
   if ((*connection_).refresh(timer.now)) {
     if (ready()) {
-      check_request_queue(timer.now);
+      check_request_queue(trace_info);
     }
   }
 }
@@ -521,13 +521,9 @@ void MarketData::subscribe(std::span<Symbol const> const &symbols, std::span<std
   }
 }
 
-void MarketData::check_request_queue(std::chrono::nanoseconds now) {
-  auto can_request = [&](auto now) { return rate_limiter_.can_request(now); };
-  auto request = [&](auto &message) {
-    log::debug("{}"sv, message);
-    (*connection_).send_text(message);
-  };
-  request_queue_.dispatch(can_request, request, now);
+void MarketData::check_request_queue(TraceInfo const &trace_info) {
+  auto callback = [&]([[maybe_unused]] auto &trace_info, auto &message) { (*connection_).send_text(message); };
+  request_queue_.dispatch(trace_info, callback);
 }
 
 void MarketData::parse(TraceInfo const &trace_info, std::string_view const &message) {
