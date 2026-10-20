@@ -213,7 +213,7 @@ void Rest::get_exchange_info() {
     };
     auto sequence = download_.sequence();
     auto callback = [this, sequence](auto &event, [[maybe_unused]] auto &request_id) { get_exchange_info_ack(event, sequence); };
-    (*connection_)(request, callback, "exchange_info"sv);
+    (*connection_)(request, callback, "exchange-info"sv);
   });
 }
 

@@ -26,7 +26,7 @@
       "name": "ping_path",
       "type": "std/string",
       "validator": "roq/flags/validators/Path",
-      "default": "/fapi/v1/ping",
+      "default": "/fapi/v3/time",
       "description": "Ping path"
     },
     {

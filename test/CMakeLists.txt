@@ -3,11 +3,13 @@ include(RoqAutogen)
 set(TARGET_NAME ${PROJECT_NAME}-test)
 
 set(SOURCES
+    # rest
+    json_depth_ack.cpp
+    json_exchange_info_ack.cpp
+    # ws
     json_agg_trade.cpp
     json_book_ticker.cpp
-    json_depth_ack.cpp
     json_depth_update.cpp
-    json_exchange_info_ack.cpp
     json_mark_price_update.cpp
     json_mini_ticker.cpp
     json_ticker.cpp

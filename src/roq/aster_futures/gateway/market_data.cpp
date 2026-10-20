@@ -489,12 +489,13 @@ void MarketData::subscribe(std::span<Symbol const> const &symbols) {
   if (std::empty(symbols)) {
     return;
   }
-  std::array<std::string_view, 6> const streams{{
+  std::array<std::string_view, 7> const streams{{
       "aggTrade"sv,
       "markPrice@1s"sv,
       "miniTicker"sv,
       "ticker"sv,
       "bookTicker"sv,
+      "forceOrder"sv,
       "depth"sv,
   }};
   subscribe(symbols, streams);

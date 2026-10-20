@@ -7,7 +7,9 @@
 #include <string>
 #include <string_view>
 
-#include "roq/utils/mac/hmac.hpp"
+#include "roq/utils/hash/keccak256.hpp"
+
+#include "roq/utils/eth/account.hpp"
 
 namespace roq {
 namespace aster_futures {
@@ -19,21 +21,18 @@ struct Crypto final {
   Crypto(Crypto &&) = delete;
   Crypto(Crypto const &) = delete;
 
-  std::string_view get_headers() const { return headers_; }
+  auto const &get_key() const { return key_; }
 
-  std::string create_ws_login(std::chrono::milliseconds now);
-
-  std::string create_query(std::chrono::milliseconds now_utc);
-  std::string create_query(std::chrono::milliseconds now_utc, std::string_view const &query);
+  std::string sign_message(std::chrono::microseconds now_utc, std::string_view const &message);
 
  private:
-  using MAC = utils::mac::HMAC<utils::hash::SHA256>;
-  using Digest = std::array<std::byte, MAC::DIGEST_LENGTH>;
+  using Hash = utils::hash::Keccak256;
+  using Digest = std::array<std::byte, Hash::DIGEST_LENGTH>;
 
   std::string const key_;
-  MAC mac_;
+  utils::eth::Account account_;
   Digest digest_;
-  std::string const headers_;
+  Hash hash_;
 };
 
 }  // namespace tools

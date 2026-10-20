@@ -451,9 +451,11 @@ void DropCopy::operator()(Trace<protocol::json::Fill> const &event) {
 // helpers
 
 void DropCopy::login(TraceInfo const &trace_info) {
+  /*
   auto message = account_.create_ws_login(trace_info);
   log::debug("message={}"sv, message);
   (*connection_).send_text(message);
+  */
 }
 
 void DropCopy::subscribe() {

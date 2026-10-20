@@ -299,14 +299,13 @@ void OrderEntry::get_account_info(TraceInfo const &trace_info) {
     auto method = web::http::Method::GET;
     auto path = shared_.api.order_management.account_info;
     auto query = account_.create_query(trace_info);
-    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
-        .headers = headers,
+        .headers = {},
         .body = {},
         .quality_of_service = {},
     };
@@ -370,14 +369,13 @@ void OrderEntry::get_account_assets(TraceInfo const &trace_info) {
     auto path = shared_.api.order_management.account_assets;
     auto query = fmt::format("?category={}"sv, shared_.api.category);
     auto query_2 = account_.create_query(trace_info, query);
-    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
         .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
-        .headers = headers,
+        .headers = {},
         .body = {},
         .quality_of_service = {},
     };
@@ -446,14 +444,13 @@ void OrderEntry::get_position_info(TraceInfo const &trace_info) {
     auto path = shared_.api.order_management.position_info;
     auto query = fmt::format("?category={}"sv, shared_.api.category);
     auto query_2 = account_.create_query(trace_info, query);
-    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
         .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
-        .headers = headers,
+        .headers = {},
         .body = {},
         .quality_of_service = {},
     };
@@ -533,14 +530,13 @@ void OrderEntry::get_open_orders(TraceInfo const &trace_info) {
     auto path = shared_.api.order_management.open_orders;
     auto query = fmt::format("?category={}"sv, shared_.api.category);
     auto query_2 = account_.create_query(trace_info, query);
-    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
         .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
-        .headers = headers,
+        .headers = {},
         .body = {},
         .quality_of_service = {},
     };
@@ -633,14 +629,13 @@ void OrderEntry::get_fill_history(TraceInfo const &trace_info) {
     auto path = shared_.api.order_management.fill_history;
     auto query = fmt::format("?category={}&startTime={}"sv, shared_.api.category, start_time.count());
     auto query_2 = account_.create_query(trace_info, query);
-    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
         .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
-        .headers = headers,
+        .headers = {},
         .body = {},
         .quality_of_service = {},
     };
@@ -780,14 +775,13 @@ void OrderEntry::place_order(
     auto body = protocol::json::Encoder::place_order(encode_buffer_, create_order, order, ref_data, request_id, shared_.api.category);
     log::warn(R"(DEBUG body="{}")"sv, body);
     auto query_2 = account_.create_query(message_info, query);
-    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
         .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_JSON,
-        .headers = headers,
+        .headers = {},
         .body = body,
         .quality_of_service = {},
     };
@@ -859,14 +853,13 @@ void OrderEntry::modify_order(
     auto query = fmt::format("?category={}"sv, shared_.api.category);
     auto body = protocol::json::Encoder::modify_order(encode_buffer_, modify_order, order, ref_data, request_id);
     log::warn(R"(DEBUG body="{}")"sv, body);
-    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_JSON,
-        .headers = headers,
+        .headers = {},
         .body = body,
         .quality_of_service = {},
     };
@@ -936,14 +929,13 @@ void OrderEntry::cancel_order(
     auto query = fmt::format("?category={}"sv, shared_.api.category);
     auto body = protocol::json::Encoder::cancel_order(encode_buffer_, cancel_order, order, ref_data, request_id);
     log::warn(R"(DEBUG body="{}")"sv, body);
-    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_JSON,
-        .headers = headers,
+        .headers = {},
         .body = body,
         .quality_of_service = {},
     };
@@ -1007,14 +999,13 @@ void OrderEntry::cancel_all_orders(Event<CancelAllOrders> const &event, std::str
     auto path = shared_.api.order_management.cancel_all_orders;
     auto query = fmt::format("?category={}"sv, shared_.api.category);
     auto body = protocol::json::Encoder::cancel_all_orders(encode_buffer_, cancel_all_orders, request_id, shared_.api.category);
-    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_JSON,
-        .headers = headers,
+        .headers = {},
         .body = body,
         .quality_of_service = {},
     };
@@ -1074,14 +1065,13 @@ void OrderEntry::countdown_cancel_all() {
     auto path = shared_.api.order_management.countdown_cancel_all;
     auto body =
         protocol::json::Encoder::countdown_cancel_all(encode_buffer_, std::chrono::duration_cast<std::chrono::seconds>(shared_.settings.rest.ping_freq));
-    auto headers = account_.get_headers();
     auto request = web::rest::Request{
         .method = method,
         .path = path,
         .query = {},
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_JSON,
-        .headers = headers,
+        .headers = {},
         .body = body,
         .quality_of_service = {},
     };
