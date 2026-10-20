@@ -8,6 +8,8 @@ source:
 build:
   skip: true  # [not unix]
   number: {{ ROQ_BUILD_NUMBER if ROQ_BUILD_NUMBER is defined else GIT_DESCRIBE_NUMBER }}
+  ignore_run_exports_from:
+    - openssl
 
 requirements:
   build:
@@ -24,7 +26,9 @@ requirements:
     - catch2  # [osx]
     - fmt
     - libabseil
+    - libopenssl-static  # roq-utils
     - magic_enum
+    - openssl  # roq-utils
     - roq-api
     - roq-cache
     - roq-codec

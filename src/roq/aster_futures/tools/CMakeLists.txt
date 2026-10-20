@@ -4,4 +4,4 @@ set(SOURCES crypto.cpp throttle.cpp)
 
 add_library(${TARGET_NAME} OBJECT ${SOURCES})
 
-target_link_libraries(${TARGET_NAME} PRIVATE roq-server::roq-server roq-web::roq-web roq-utils::roq-utils fmt::fmt)
+target_link_libraries(${TARGET_NAME} PRIVATE roq-server::roq-server roq-web::roq-web roq-utils::roq-utils fmt::fmt OpenSSL::SSL)
