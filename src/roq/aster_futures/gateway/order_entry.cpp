@@ -304,7 +304,7 @@ void OrderEntry::get_account_info(TraceInfo const &trace_info) {
         .path = path,
         .query = query,
         .accept = web::http::Accept::APPLICATION_JSON,
-        .content_type = {},
+        .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
         .headers = {},
         .body = {},
         .quality_of_service = {},
