@@ -1,0 +1,80 @@
+{
+  "name": "roq/aster_futures/protocol/json/AccountAck",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "feeTier",
+      "type": "std/int32"
+    },
+    {
+      "name": "canTrade",
+      "type": "std/bool"
+    },
+    {
+      "name": "canDeposit",
+      "type": "std/bool"
+    },
+    {
+      "name": "canWithdraw",
+      "type": "std/bool"
+    },
+    {
+      "name": "updateTime",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "totalInitialMargin",
+      "type": "std/double"
+    },
+    {
+      "name": "totalMaintMargin",
+      "type": "std/double"
+    },
+    {
+      "name": "totalWalletBalance",
+      "type": "std/double"
+    },
+    {
+      "name": "totalUnrealizedProfit",
+      "type": "std/double"
+    },
+    {
+      "name": "totalMarginBalance",
+      "type": "std/double"
+    },
+    {
+      "name": "totalPositionInitialMargin",
+      "type": "std/double"
+    },
+    {
+      "name": "totalOpenOrderInitialMargin",
+      "type": "std/double"
+    },
+    {
+      "name": "totalCrossWalletBalance",
+      "type": "std/double"
+    },
+    {
+      "name": "totalCrossUnPnl",
+      "type": "std/double"
+    },
+    {
+      "name": "availableBalance",
+      "type": "std/double"
+    },
+    {
+      "name": "maxWithdrawAmount",
+      "type": "std/double"
+    },
+    {
+      "name": "assets",
+      "type": "roq/aster_futures/protocol/json/AccountAckAssetsItem",
+      "array": "std/span"
+    },
+    {
+      "name": "positions",
+      "type": "roq/aster_futures/protocol/json/AccountAckPositionsItem",
+      "array": "std/span"
+    }
+  ]
+}

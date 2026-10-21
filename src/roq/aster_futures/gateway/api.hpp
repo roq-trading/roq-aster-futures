@@ -11,19 +11,18 @@ namespace aster_futures {
 namespace gateway {
 
 struct API final {
-  std::string_view category;
-  std::string_view inst_type;
+  std::string_view category;   // XXX FIXME TODO remove ???
+  std::string_view inst_type;  // XXX FIXME TODO remove ???
   struct {
     std::string_view exchange_info;
     std::string_view depth;
   } market_data;
 
   struct {
-    std::string_view account_info;
-    std::string_view account_assets;
-    std::string_view position_info;
+    std::string_view listen_key;
+    std::string_view account;
     std::string_view open_orders;
-    std::string_view fill_history;
+    std::string_view user_trades;
     std::string_view place_order;
     std::string_view modify_order;
     std::string_view cancel_order;

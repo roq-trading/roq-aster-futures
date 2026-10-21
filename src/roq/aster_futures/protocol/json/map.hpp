@@ -25,6 +25,7 @@
 #include "roq/aster_futures/protocol/json/order_status.hpp"
 #include "roq/aster_futures/protocol/json/order_type.hpp"
 #include "roq/aster_futures/protocol/json/pos_side.hpp"
+#include "roq/aster_futures/protocol/json/position_side.hpp"
 #include "roq/aster_futures/protocol/json/side.hpp"
 #include "roq/aster_futures/protocol/json/time_in_force.hpp"
 #include "roq/aster_futures/protocol/json/trade_scope.hpp"
@@ -66,6 +67,10 @@ std::optional<OrderStatus> Map<aster_futures::protocol::json::OrderStatus>::help
 template <>
 template <>
 std::optional<OrderType> Map<aster_futures::protocol::json::OrderType>::helper() const;
+
+template <>
+template <>
+std::optional<PositionEffect> Map<aster_futures::protocol::json::PositionSide, aster_futures::protocol::json::Side>::helper() const;
 
 template <>
 template <>

@@ -79,11 +79,7 @@ struct MarketData final : public Base<MarketData>,
   void operator()(Trace<protocol::json::BookTicker> const &) override;
   void operator()(Trace<protocol::json::DepthUpdate> const &) override;
 
-  void operator()(Trace<protocol::json::Login> const &) override;
-  void operator()(Trace<protocol::json::Account> const &) override;
-  void operator()(Trace<protocol::json::Position> const &) override;
-  void operator()(Trace<protocol::json::Order> const &) override;
-  void operator()(Trace<protocol::json::Fill> const &) override;
+  void operator()(Trace<protocol::json::OrderTradeUpdate> const &) override;
 
   // helpers
 

@@ -3,16 +3,7 @@
   "type": "enum",
   "values": [
     {
-      "name": "none"
-    },
-    {
-      "name": "cancel_taker"
-    },
-    {
-      "name": "cancel_maker"
-    },
-    {
-      "name": "cancel_both"
+      "name": "EXPIRE_MAKER"
     }
   ]
 }

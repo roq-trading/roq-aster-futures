@@ -25,23 +25,54 @@ R create_accounts(auto &settings, auto &config) {
   return result;
 }
 
+Account &get_account(auto &accounts, auto &account) {
+  auto iter = accounts.find(account);
+  if (iter == std::end(accounts)) {
+    log::fatal("Unexpected"sv);
+  }
+  return *(*iter).second;
+}
+
 template <typename R>
-R create_order_entry(auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared) {
-  R result;
-  for (auto &[name, account] : accounts) {
-    result.try_emplace(static_cast<std::string_view>(name), std::make_unique<OrderEntry>(gateway, context, ++stream_id, *account, shared));
+R create_requests(auto &config, auto &shared) {
+  using result_type = std::remove_cvref_t<R>;
+  result_type result;
+  for (auto &[_, account] : config.accounts) {
+    auto request = std::make_unique<Request>(shared);
+    result.try_emplace(static_cast<std::string_view>(account.name), std::move(request));
+  }
+  return result;
+}
+
+Request &get_request(auto &requests, auto &account) {
+  auto iter = requests.find(account);
+  if (iter == std::end(requests)) {
+    log::fatal("Unexpected"sv);
+  }
+  return *(*iter).second;
+}
+
+template <typename R>
+R create_order_entry(auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &requests) {
+  using result_type = std::remove_cvref_t<R>;
+  result_type result;
+  for (auto &[_, item] : accounts) {
+    auto &account = *item;
+    auto &request = get_request(requests, account.name);
+    auto obj = std::make_unique<OrderEntry>(gateway, context, ++stream_id, account, shared, request);
+    result.try_emplace(static_cast<std::string_view>(account.name), std::move(obj));
   }
   return result;
 }
 
 template <typename R>
-R create_drop_copy(auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared) {
-  R result;
-  /*
-  for (auto &[name, account] : accounts) {
-    result.try_emplace(static_cast<std::string_view>(name), std::make_unique<DropCopy>(gateway, context, ++stream_id, *account, shared));
+R create_drop_copy(auto &accounts) {
+  using result_type = std::remove_cvref_t<R>;
+  result_type result;
+  for (auto &[_, item] : accounts) {
+    auto &account = *item;
+    result.try_emplace(account.name, nullptr);
   }
-  */
   return result;
 }
 }  // namespace
@@ -58,9 +89,10 @@ uint8_t Controller::parse_api(Settings const &) {
 
 Controller::Controller(server::Dispatcher &dispatcher, Settings const &settings, Config const &config, io::Context &context)
     : dispatcher_{dispatcher}, master_account_{config.get_master_account()}, accounts_{create_accounts<decltype(accounts_)>(settings, config)},
-      context_{context}, shared_{dispatcher, settings}, rest_{*this, context_, ++stream_id_, shared_},
-      order_entry_{create_order_entry<decltype(order_entry_)>(*this, context_, stream_id_, accounts_, shared_)},
-      drop_copy_{create_drop_copy<decltype(drop_copy_)>(*this, context_, stream_id_, accounts_, shared_)} {
+      context_{context}, shared_{dispatcher, settings}, requests_{create_requests<decltype(requests_)>(config, shared_)},
+      rest_{*this, context_, ++stream_id_, shared_},
+      order_entry_{create_order_entry<decltype(order_entry_)>(*this, context_, stream_id_, accounts_, shared_, requests_)},
+      drop_copy_{create_drop_copy<decltype(drop_copy_)>(accounts_)} {
 }
 
 // server::Handler
@@ -175,6 +207,26 @@ void Controller::operator()(Trace<SymbolsUpdate> const &event) {
   ensure_symbol_slices(trace_info, size);
   for (auto &iter : market_data_) {
     (*iter).subscribe(start_from);
+  }
+}
+
+// OrderEntry::Handler
+
+void Controller::operator()(Trace<ListenKeyUpdate> const &event) {
+  auto &[trace_info, listen_key_update] = event;
+  auto &account = listen_key_update.account;
+  assert(!std::empty(account));
+  auto iter = drop_copy_.find(account);
+  if (iter == std::end(drop_copy_)) {
+    log::fatal(R"(Unexpected: account="{}")"sv, account);
+  } else if (!static_cast<bool>((*iter).second)) {
+    log::info(R"(Create DropCopy (user-stream) for account="{}" using listen_key="{}")"sv, account, listen_key_update.listen_key);
+    auto &account_2 = get_account(accounts_, account);
+    auto &request = get_request(requests_, account);
+    auto obj = std::make_unique<DropCopy>(*this, context_, ++stream_id_, account_2, shared_, request, listen_key_update.listen_key);
+    Start start;
+    create_trace_and_dispatch(*obj, trace_info, start);
+    (*iter).second = std::move(obj);
   }
 }
 

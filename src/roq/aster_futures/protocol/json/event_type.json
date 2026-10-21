@@ -19,6 +19,9 @@
     },
     {
       "name": "depthUpdate"
+    },
+    {
+      "name": "ORDER_TRADE_UPDATE"
     }
   ]
 }

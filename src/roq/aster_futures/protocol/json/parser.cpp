@@ -73,6 +73,9 @@ bool Parser::dispatch(
       return dispatch_helper<BookTicker>(handler, message, buffer_stack, trace_info);
     case DEPTH_UPDATE:
       return dispatch_helper<DepthUpdate>(handler, message, buffer_stack, trace_info);
+    //
+    case ORDER_TRADE_UPDATE:
+      return dispatch_helper<OrderTradeUpdate>(handler, message, buffer_stack, trace_info);
   }
   if (allow_unknown_event_types) {
     return false;

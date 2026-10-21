@@ -21,13 +21,16 @@
 #include "roq/server/stream.hpp"
 
 #include "roq/aster_futures/gateway/account.hpp"
+#include "roq/aster_futures/gateway/request.hpp"
 #include "roq/aster_futures/gateway/shared.hpp"
 
-#include "roq/aster_futures/protocol/json/account_assets.hpp"
-#include "roq/aster_futures/protocol/json/account_info.hpp"
-#include "roq/aster_futures/protocol/json/fill_history.hpp"
-#include "roq/aster_futures/protocol/json/open_orders.hpp"
-#include "roq/aster_futures/protocol/json/position_info.hpp"
+#include "roq/aster_futures/gateway/listen_key_update.hpp"
+
+#include "roq/aster_futures/protocol/json/listen_key_ack.hpp"
+
+#include "roq/aster_futures/protocol/json/account_ack.hpp"
+#include "roq/aster_futures/protocol/json/open_orders_ack.hpp"
+#include "roq/aster_futures/protocol/json/user_trades_ack.hpp"
 
 #include "roq/aster_futures/protocol/json/cancel_all_orders_ack.hpp"
 #include "roq/aster_futures/protocol/json/cancel_order_ack.hpp"
@@ -39,9 +42,13 @@ namespace aster_futures {
 namespace gateway {
 
 struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStream, public web::rest::Client::Handler {
-  struct Handler {};
+  struct Handler {
+    virtual void operator()(Trace<ListenKeyUpdate> const &) = 0;
+  };
 
-  OrderEntry(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &);
+  OrderEntry(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &);
+
+  void force_listen_key_refresh(TraceInfo const &);
 
   // protected:
   friend base_type;
@@ -89,45 +96,35 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
 
   enum class State {
     UNDEFINED = 0,
-    ACCOUNT_INFO,
-    ACCOUNT_ASSETS,
-    POSITION_INFO,
-    OPEN_ORDERS,
-    FILL_HISTORY,
+    LISTEN_KEY,
     DONE,
   };
 
   int32_t download(Trace<State> const &);
 
-  // account-info
+  // listen-key
 
-  void get_account_info(TraceInfo const &);
-  void get_account_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<protocol::json::AccountInfo> const &);
+  void get_listen_key(TraceInfo const &);
+  void get_listen_key_ack(Trace<web::rest::Response> const &, uint32_t sequence);
+  void operator()(Trace<protocol::json::ListenKeyAck> const &);
 
-  // account-assets
+  // account
 
-  void get_account_assets(TraceInfo const &);
-  void get_account_assets_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<protocol::json::AccountAssets> const &);
-
-  // position-info
-
-  void get_position_info(TraceInfo const &);
-  void get_position_info_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<protocol::json::PositionInfo> const &);
+  void get_account(TraceInfo const &);
+  void get_account_ack(Trace<web::rest::Response> const &);
+  void operator()(Trace<protocol::json::AccountAck> const &);
 
   // open-orders
 
   void get_open_orders(TraceInfo const &);
-  void get_open_orders_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<protocol::json::OpenOrders> const &);
+  void get_open_orders_ack(Trace<web::rest::Response> const &);
+  void operator()(Trace<protocol::json::OpenOrdersAck> const &);
 
-  // fill-history
+  // user-trades
 
-  void get_fill_history(TraceInfo const &);
-  void get_fill_history_ack(Trace<web::rest::Response> const &, uint32_t sequence);
-  void operator()(Trace<protocol::json::FillHistory> const &);
+  void get_user_trades(TraceInfo const &);
+  void get_user_trades_ack(Trace<web::rest::Response> const &);
+  void operator()(Trace<protocol::json::UserTradesAck> const &);
 
   // place-order
 
@@ -171,6 +168,8 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
 
   // helpers
 
+  void check_request_queue(TraceInfo const &);
+
   void process_response(Trace<web::rest::Response> const &, auto error_handler, auto success_handler);
 
  private:
@@ -187,15 +186,14 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
     utils::metrics::Counter disconnect;
   } counter_;
   struct {
-    utils::metrics::Profile account_info, account_info_ack,  //
-        account_assets, account_assets_ack,                  //
-        position_info, position_info_ack,                    //
-        open_orders, open_orders_ack,                        //
-        fill_history, fill_history_ack,                      //
-        place_order, place_order_ack,                        //
-        modify_order, modify_order_ack,                      //
-        cancel_order, cancel_order_ack,                      //
-        cancel_all_orders, cancel_all_orders_ack,            //
+    utils::metrics::Profile listen_key, listen_key_ack,  //
+        account, account_ack,                            //
+        open_orders, open_orders_ack,                    //
+        user_trades, user_trades_ack,                    //
+        place_order, place_order_ack,                    //
+        modify_order, modify_order_ack,                  //
+        cancel_order, cancel_order_ack,                  //
+        cancel_all_orders, cancel_all_orders_ack,        //
         countdown_cancel_all, countdown_cancel_all_ack;
   } profile_;
   struct {
@@ -204,6 +202,7 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
   // account
   Account &account_;
   Shared &shared_;
+  Request &request_;
   // state
   ConnectionStatus connection_status_ = {};
   core::Download2<State> download_;

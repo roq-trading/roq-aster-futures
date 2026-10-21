@@ -5,15 +5,12 @@ set(SOURCES encoder.cpp map.cpp parser.cpp utils.cpp)
 include(RoqAutogen)
 
 set(AUTOGEN_SCHEMAS
-    account_assets_data_assets_item.json
-    account_assets_data.json
-    account_assets.json
+    working_type.json
     account_data_item_coin_item.json
     account_data_item.json
-    account_info_data_coin_config_item.json
-    account_info_data.json
-    account_info_data_symbol_config_item.json
-    account_info.json
+    account_ack_assets_item.json
+    account_ack_positions_item.json
+    account_ack.json
     account.json
     account_mode.json
     ack_error.json
@@ -28,7 +25,6 @@ set(AUTOGEN_SCHEMAS
     cancel_all_orders_ack_data.json
     cancel_all_orders_ack_data_list_item.json
     cancel_all_orders_ack.json
-    cancel_order_ack_data.json
     cancel_order_ack.json
     category.json
     category_ws.json
@@ -44,10 +40,8 @@ set(AUTOGEN_SCHEMAS
     exchange_info_ack_symbols_item.json
     fill_data_item_fee_detail_item.json
     fill_data_item.json
-    fill_history_data.json
-    fill_history_data_list_item_fee_detail_item.json
-    fill_history_data_list_item.json
-    fill_history.json
+    user_trades_ack.json
+    listen_key_ack.json
     fill.json
     filter_type.json
     futures_type.json
@@ -61,26 +55,20 @@ set(AUTOGEN_SCHEMAS
     mini_ticker.json
     modify_order_ack_data.json
     modify_order_ack.json
-    open_orders_data.json
-    open_orders_data_list_item_fee_detail_item.json
-    open_orders_data_list_item.json
-    open_orders.json
-    order_data_item_fee_detail_item.json
-    order_data_item.json
-    order.json
+    open_orders_ack_item.json
+    open_orders_ack.json
+    order_trade_update_order.json
+    order_trade_update.json
     order_source.json
     order_status.json
     order_type.json
-    place_order_ack_data.json
     place_order_ack.json
     pong.json
     position_data_item.json
-    position_info_data.json
-    position_info_data_list_item.json
-    position_info.json
     position.json
     position_status.json
     pos_mode.json
+    position_side.json
     pos_side.json
     side.json
     status.json

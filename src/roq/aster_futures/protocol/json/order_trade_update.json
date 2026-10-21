@@ -1,0 +1,26 @@
+{
+  "name": "roq/aster_futures/protocol/json/OrderTradeUpdate",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "roq/aster_futures/protocol/json/EventType"
+    },
+    {
+      "raw": "T",
+      "name": "transaction_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "o",
+      "name": "order",
+      "type": "roq/aster_futures/protocol/json/OrderTradeUpdateOrder"
+    }
+  ]
+}

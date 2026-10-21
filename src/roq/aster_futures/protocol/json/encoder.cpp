@@ -16,25 +16,24 @@ namespace aster_futures {
 namespace protocol {
 namespace json {
 
-// TimeInForce POST_ONLY
-// reduceOnly
-// stpMode
 std::string_view Encoder::place_order(
     std::string &buffer,
     CreateOrder const &create_order,
     server::oms::Order const &,
     server::oms::RefData const &ref_data,
-    std::string_view const &request_id,
-    std::string_view const &category) {
+    std::string_view const &request_id) {
   buffer.clear();
   fmt::format_to(
       std::back_inserter(buffer),
-      R"({{)"
-      R"("category":"{}",)"
-      R"("symbol":"{}",)"
-      R"("qty":"{}",)"sv,
-      category,
+      "newClientOrderId={}"
+      "&symbol={}"
+      "&type={}"
+      "&side={}"
+      "&quantity={}"sv,
+      request_id,
       create_order.symbol,
+      map(create_order.order_type).template get<json::OrderType>().as_raw_text(),
+      map(create_order.side).template get<json::Side>().as_raw_text(),
       Decimal{create_order.quantity, ref_data.quantity.precision});
   if (create_order.order_type == roq::OrderType::LIMIT) {
     auto time_in_force = [&]() -> json::TimeInForce {
@@ -45,27 +44,17 @@ std::string_view Encoder::place_order(
     }();
     fmt::format_to(
         std::back_inserter(buffer),
-        R"("price":"{}",)"
-        R"("timeInForce":"{}",)"sv,
+        "&price={}"
+        "&timeInForce={}"sv,
         Decimal{create_order.price, ref_data.price.precision},
         time_in_force.as_raw_text());
   }
-  fmt::format_to(
-      std::back_inserter(buffer),
-      R"("side":"{}",)"
-      R"("orderType":"{}",)"sv,
-      map(create_order.side).template get<json::Side>().as_raw_text(),
-      map(create_order.order_type).template get<json::OrderType>().as_raw_text());
+  /*
   if (create_order.position_effect != roq::PositionEffect{}) {
     fmt::format_to(
-        std::back_inserter(buffer), R"("posSide":"{}",)"sv, map(create_order.position_effect, create_order.side).template get<json::PosSide>().as_raw_text());
+        std::back_inserter(buffer), "&posSide={}"sv, map(create_order.position_effect, create_order.side).template get<json::PositionSide>().as_raw_text());
   }
-  fmt::format_to(std::back_inserter(buffer), R"("clientOid":"{}",)"sv, request_id);
-  fmt::format_to(
-      std::back_inserter(buffer),
-      R"("reduceOnly":"no",)"
-      R"("stpMode":"none")"
-      R"(}})"sv);
+  */
   return buffer;
 }
 
@@ -109,20 +98,11 @@ std::string_view Encoder::cancel_order(
     server::oms::RefData const &,
     [[maybe_unused]] std::string_view const &request_id) {
   buffer.clear();
+  fmt::format_to(std::back_inserter(buffer), "symbol={}"sv, order.symbol);
   if (std::empty(order.external_order_id)) {
-    fmt::format_to(
-        std::back_inserter(buffer),
-        R"({{)"
-        R"("clientOid":"{}")"
-        R"(}})"sv,
-        order.client_order_id);
+    fmt::format_to(std::back_inserter(buffer), "&orderId={}"sv, order.external_order_id);
   } else {
-    fmt::format_to(
-        std::back_inserter(buffer),
-        R"({{)"
-        R"("orderId":"{}")"
-        R"(}})"sv,
-        order.external_order_id);
+    fmt::format_to(std::back_inserter(buffer), "&origClientOrderId={}"sv, order.client_order_id);
   }
   return buffer;
 }

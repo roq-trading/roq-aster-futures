@@ -1,0 +1,10 @@
+{
+  "name": "roq/aster_futures/protocol/json/ListenKeyAck",
+  "type": "dictionary",
+  "values": [
+    {
+      "name": "listenKey",
+      "type": "std/string_view"
+    }
+  ]
+}

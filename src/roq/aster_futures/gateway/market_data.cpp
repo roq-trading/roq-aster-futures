@@ -463,23 +463,7 @@ void MarketData::operator()(Trace<protocol::json::DepthUpdate> const &event) {
   });
 }
 
-void MarketData::operator()(Trace<protocol::json::Login> const &) {
-  log::fatal("Unexpected"sv);
-}
-
-void MarketData::operator()(Trace<protocol::json::Account> const &) {
-  log::fatal("Unexpected"sv);
-}
-
-void MarketData::operator()(Trace<protocol::json::Position> const &) {
-  log::fatal("Unexpected"sv);
-}
-
-void MarketData::operator()(Trace<protocol::json::Order> const &) {
-  log::fatal("Unexpected"sv);
-}
-
-void MarketData::operator()(Trace<protocol::json::Fill> const &) {
+void MarketData::operator()(Trace<protocol::json::OrderTradeUpdate> const &) {
   log::fatal("Unexpected"sv);
 }
 

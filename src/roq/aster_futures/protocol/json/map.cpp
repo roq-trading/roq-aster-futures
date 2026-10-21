@@ -282,7 +282,7 @@ constexpr Helper<aster_futures::protocol::json::OrderStatus>::operator std::opti
       return roq::OrderStatus::WORKING;
     case FILLED:
       return roq::OrderStatus::COMPLETED;
-    case CANCELLED:
+    case CANCELED:
       return roq::OrderStatus::CANCELED;
   }
   return {};
@@ -294,7 +294,7 @@ static_assert(Helper{aster_futures::protocol::json::OrderStatus{aster_futures::p
 static_assert(Helper{aster_futures::protocol::json::OrderStatus{aster_futures::protocol::json::OrderStatus::NEW}} == roq::OrderStatus::WORKING);
 static_assert(Helper{aster_futures::protocol::json::OrderStatus{aster_futures::protocol::json::OrderStatus::PARTIALLY_FILLED}} == roq::OrderStatus::WORKING);
 static_assert(Helper{aster_futures::protocol::json::OrderStatus{aster_futures::protocol::json::OrderStatus::FILLED}} == roq::OrderStatus::COMPLETED);
-static_assert(Helper{aster_futures::protocol::json::OrderStatus{aster_futures::protocol::json::OrderStatus::CANCELLED}} == roq::OrderStatus::CANCELED);
+static_assert(Helper{aster_futures::protocol::json::OrderStatus{aster_futures::protocol::json::OrderStatus::CANCELED}} == roq::OrderStatus::CANCELED);
 
 template <>
 template <>
@@ -328,6 +328,42 @@ static_assert(Helper{aster_futures::protocol::json::OrderType{aster_futures::pro
 template <>
 template <>
 std::optional<roq::OrderType> Map<aster_futures::protocol::json::OrderType>::helper() const {
+  return Helper{args_};
+}
+
+// {aster_futures::protocol::json::PositionSide, aster_futures::protocol::json::Side} => roq::PositionEffect
+
+template <>
+template <>
+constexpr Helper<aster_futures::protocol::json::PositionSide, aster_futures::protocol::json::Side>::operator std::optional<roq::PositionEffect>() const {
+  switch (std::get<0>(args_)) {
+    using enum aster_futures::protocol::json::PositionSide::type_t;
+    case UNDEFINED_INTERNAL:
+      return roq::PositionEffect::UNDEFINED;
+    case UNKNOWN_INTERNAL:
+      return roq::PositionEffect::UNDEFINED;
+    case BOTH:
+      return roq::PositionEffect::UNDEFINED;
+  }
+  return {};
+}
+
+static_assert(
+    Helper{
+        aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::UNDEFINED_INTERNAL},
+        aster_futures::protocol::json::Side{aster_futures::protocol::json::Side::UNDEFINED_INTERNAL}} == roq::PositionEffect::UNDEFINED);
+static_assert(
+    Helper{
+        aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::BOTH},
+        aster_futures::protocol::json::Side{aster_futures::protocol::json::Side::BUY}} == roq::PositionEffect::UNDEFINED);
+static_assert(
+    Helper{
+        aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::BOTH},
+        aster_futures::protocol::json::Side{aster_futures::protocol::json::Side::SELL}} == roq::PositionEffect::UNDEFINED);
+
+template <>
+template <>
+std::optional<roq::PositionEffect> Map<aster_futures::protocol::json::PositionSide, aster_futures::protocol::json::Side>::helper() const {
   return Helper{args_};
 }
 

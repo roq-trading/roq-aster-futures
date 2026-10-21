@@ -11,7 +11,6 @@ using namespace std::literals;
 
 using value_type = protocol::json::Ticker;
 
-// note! truncated
 TEST_CASE("simple", "[json_ticker]") {
   auto message = R"({)"
                  R"("e":"24hrTicker",)"

@@ -19,12 +19,7 @@
 #include "roq/aster_futures/protocol/json/mini_ticker.hpp"
 #include "roq/aster_futures/protocol/json/ticker.hpp"
 
-#include "roq/aster_futures/protocol/json/login.hpp"
-
-#include "roq/aster_futures/protocol/json/account.hpp"
-#include "roq/aster_futures/protocol/json/fill.hpp"
-#include "roq/aster_futures/protocol/json/order.hpp"
-#include "roq/aster_futures/protocol/json/position.hpp"
+#include "roq/aster_futures/protocol/json/order_trade_update.hpp"
 
 namespace roq {
 namespace aster_futures {
@@ -43,11 +38,7 @@ struct Parser final {
     virtual void operator()(Trace<json::BookTicker> const &) = 0;
     virtual void operator()(Trace<json::DepthUpdate> const &) = 0;
     //
-    virtual void operator()(Trace<json::Login> const &) = 0;
-    virtual void operator()(Trace<json::Account> const &) = 0;
-    virtual void operator()(Trace<json::Position> const &) = 0;
-    virtual void operator()(Trace<json::Order> const &) = 0;
-    virtual void operator()(Trace<json::Fill> const &) = 0;
+    virtual void operator()(Trace<json::OrderTradeUpdate> const &) = 0;
   };
 
   static bool dispatch(Handler &, std::string_view const &message, core::json::BufferStack &, TraceInfo const &, bool allow_unknown_event_types);

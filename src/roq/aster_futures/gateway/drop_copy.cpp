@@ -41,8 +41,14 @@ auto create_name(auto stream_id, auto &account) {
   return fmt::format("{}:{}:{}"sv, stream_id, NAME, account.name);
 }
 
-auto create_connection(auto &handler, auto &settings, auto &context, auto &shared) {
-  auto uri = settings.ws.uri;
+auto create_uri(auto &settings, auto &listen_key) {
+  auto &uri = settings.ws.uri;
+  auto result = fmt::format("{}://{}{}/{}"sv, uri.get_scheme(), uri.get_host(), uri.get_path(), listen_key);
+  return io::web::URI{result};
+}
+
+auto create_connection(auto &handler, auto &settings, auto &context, auto &shared, auto &listen_key) {
+  auto uri = create_uri(settings, listen_key);
   auto config = web::socket::Client::Config{
       // connection
       .interface = {},
@@ -73,9 +79,11 @@ struct create_metrics final : public utils::metrics::Factory {
 
 // === IMPLEMENTATION ===
 
-DropCopy::DropCopy(Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared)
+DropCopy::DropCopy(
+    Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request, std::string_view const &listen_key)
     : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account)},
-      connection_{create_connection(*this, shared.settings, context, shared)}, decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
+      connection_{create_connection(*this, shared.settings, context, shared, listen_key)},
+      decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
       },
@@ -86,7 +94,7 @@ DropCopy::DropCopy(Handler &handler, io::Context &context, uint16_t stream_id, A
           .ping = create_metrics(shared.settings, name_, "ping"sv),
           .heartbeat = create_metrics(shared.settings, name_, "heartbeat"sv),
       },
-      account_{account}, shared_{shared} {
+      account_{account}, shared_{shared}, request_{request}, download_{shared.settings.rest.request_timeout, [this](auto &event) { return download(event); }} {
 }
 
 // server::Stream
@@ -107,10 +115,7 @@ void DropCopy::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
   if ((*connection_).refresh(timer.now)) {
     if (ready()) {
-      if (next_ping_ < timer.now) {
-        next_ping_ = timer.now + shared_.settings.ws.ping_freq;
-        (*connection_).send_text(PING);
-      }
+      check_response(trace_info);
     }
   }
 }
@@ -150,24 +155,20 @@ void DropCopy::operator()(Trace<ConnectionStatus> const &event, std::string_view
 
 // web::socket::Client::Handler
 
-void DropCopy::operator()(Trace<web::socket::Connected> const &event) {
-  auto &[trace_info, connected] = event;
-  assert(logon_timeout_.count() == 0);
-  logon_timeout_ = trace_info.origin_create_time + shared_.settings.ws.request_timeout;
+void DropCopy::operator()(Trace<web::socket::Connected> const &) {
 }
 
 void DropCopy::operator()(Trace<web::socket::Disconnected> const &event) {
   auto &[trace_info, disconnected] = event;
   ++counter_.disconnect;
-  ready_ = false;
   create_trace_and_dispatch_2(trace_info, ConnectionStatus::DISCONNECTED);
-  logon_timeout_ = {};
-  next_ping_ = {};
+  download_.reset();
 }
 
 void DropCopy::operator()(Trace<web::socket::Ready> const &event) {
   auto &[trace_info, ready] = event;
-  login(trace_info);
+  log::warn("DEBUG READY"sv);
+  download_.begin(trace_info);
 }
 
 void DropCopy::operator()(Trace<web::socket::Close> const &event) {
@@ -193,6 +194,35 @@ void DropCopy::operator()(Trace<web::socket::Text> const &event) {
 
 void DropCopy::operator()(Trace<web::socket::Binary> const &) {
   log::fatal("Unexpected"sv);
+}
+
+// core::Download
+
+int32_t DropCopy::download(Trace<State> const &event) {
+  auto &[trace_info, state] = event;
+  log::warn("DEBUG {}"sv, state);
+  switch (state) {
+    using enum State;
+    case UNDEFINED:
+      assert(false);
+      break;
+    case ACCOUNT:
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "account"sv);
+      request_.account.request(trace_info);
+      return 1;
+    case OPEN_ORDERS:
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "open-orders"sv);
+      request_.open_orders.request(trace_info);
+      return 1;
+    case USER_TRADES:
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "user-trades"sv);
+      return 1;
+    case DONE:
+      create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
+      return 0;
+  }
+  assert(false);
+  return 0;
 }
 
 // protocol::json::Parser::Handler
@@ -231,254 +261,79 @@ void DropCopy::operator()(Trace<protocol::json::DepthUpdate> const &) {
   log::fatal("Unexpected"sv);
 }
 
-void DropCopy::operator()(Trace<protocol::json::Login> const &event) {
-  auto &[trace_info, login] = event;
-  log::info<2>("login={}"sv, login);
-  if (login.code != 0) {
-    log::fatal("Unexpected: login={}"sv, login);
-  }
-  subscribe();
-  ready_ = true;
-  create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
-}
-
-// note! snapshot + incremental
-void DropCopy::operator()(Trace<protocol::json::Account> const &event) {
-  auto &[trace_info, account] = event;
-  log::info<2>("account={}"sv, account);
-  log::warn("DEBUG account={}"sv, account);
-  for (auto &item : account.data) {
-    for (auto &item_2 : item.coin) {
-      auto funds_update = FundsUpdate{
-          .stream_id = stream_id_,
-          .account = account_.name,
-          .currency = item_2.coin,
-          .margin_mode = {},
-          .balance = item_2.balance,
-          .hold = item_2.locked,
-          .borrowed = item_2.debts,
-          .unrealized_pnl = NaN,
-          .external_account = {},
-          .update_type = map(account.action),
-          .exchange_time_utc = {},
-          .exchange_sequence = {},
-          .sending_time_utc = account.ts,
-      };
-      log::warn("DEBUG funds_update={}"sv, funds_update);
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, funds_update, true);
-    }
-  }
-}
-
-// note! snapshot + incremental
-void DropCopy::operator()(Trace<protocol::json::Position> const &event) {
-  auto &[trace_info, position] = event;
-  log::info<2>("position={}"sv, position);
-  log::warn("DEBUG position={}"sv, position);
-  for (auto &item : position.data) {
-    auto long_quantity = [&]() -> double {
-      if (item.pos_side == protocol::json::PosSide::LONG) {
-        return item.size;
-      }
-      return 0.0;
-    }();
-    auto short_quantity = [&]() -> double {
-      if (item.pos_side == protocol::json::PosSide::SHORT) {
-        return item.size;
-      }
-      return 0.0;
-    }();
-    auto position_update = PositionUpdate{
-        .stream_id = stream_id_,
-        .account = account_.name,
-        .exchange = shared_.settings.exchange,
-        .symbol = item.symbol,
-        .margin_mode = map(item.margin_mode),
-        .external_account = {},
-        .long_quantity = long_quantity,
-        .short_quantity = short_quantity,
-        .update_type = map(position.action),
-        .exchange_time_utc = item.updated_time,
-        .exchange_sequence = {},
-        .sending_time_utc = position.ts,
-    };
-    log::warn("DEBUG position_update={}"sv, position_update);
-    create_trace_and_dispatch(shared_.dispatcher, trace_info, position_update, true);
-  }
-}
-
-// note! incremental
-void DropCopy::operator()(Trace<protocol::json::Order> const &event) {
-  auto &[trace_info, order] = event;
-  log::info<2>("order={}"sv, order);
-  log::warn("DEBUG order={}"sv, order);
-  for (auto &item : order.data) {
-    auto remaining_quantity = item.qty - item.cum_exec_qty;
-    auto order_update = server::oms::OrderUpdate{
-        .account = account_.name,
-        .exchange = shared_.settings.exchange,
-        .symbol = item.symbol,
-        .side = map(item.side),
-        .position_effect = map(item.trade_side),  // XXX alt. hold_side + side
-        .margin_mode = map(item.margin_mode),
-        .max_show_quantity = NaN,
-        .order_type = map(item.order_type),
-        .time_in_force = map(item.time_in_force),
-        .execution_instructions = {},  // XXX order_type + reduce_only
-        .execution_destination = {},
-        .create_time_utc = item.created_time,
-        .update_time_utc = item.updated_time,
-        .external_account = {},
-        .external_order_id = item.order_id,
-        .client_order_id = item.client_oid,
-        .order_status = map(item.order_status),
-        .error = {},
-        .text = {},
-        .quantity = item.qty,
-        .price = item.price,
-        .stop_price = NaN,
-        .leverage = NaN,
-        .remaining_quantity = remaining_quantity,
-        .traded_quantity = item.cum_exec_qty,
-        .average_traded_price = item.avg_price,
-        .last_traded_quantity = NaN,
-        .last_traded_price = NaN,
-        .last_liquidity = {},
-        .routing_id = {},
-        .max_request_version = {},
-        .max_response_version = {},
-        .max_accepted_version = {},
-        .update_type = map(order.action),
-        .sending_time_utc = order.ts,
-    };
-    log::warn("DEBUG order_update={}"sv, order_update);
-    create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
-  }
-}
-
-// note! incremental
-void DropCopy::operator()(Trace<protocol::json::Fill> const &event) {
-  auto &[trace_info, fill] = event;
-  log::info<2>("fill={}"sv, fill);
-  log::warn("DEBUG fill={}"sv, fill);
-  std::string_view symbol, order_id, client_oid;
-  protocol::json::Side side = {};
-  protocol::json::TradeSide trade_side = {};
-  std::chrono::nanoseconds exec_time = {};
-  std::chrono::nanoseconds updated_time = {};
-  auto dispatch = [&]() {
-    if (!std::empty(shared_.fills)) {
-      auto trade_update = TradeUpdate{
-          .stream_id = stream_id_,
-          .account = account_.name,
-          .order_id = {},
-          .exchange = shared_.settings.exchange,
-          .symbol = symbol,
-          .side = map(side),
-          .position_effect = map(trade_side),
-          .margin_mode = {},  // XXX FIXME TODO from asset_info[symbol]
-          .quantity_type = {},
-          .create_time_utc = exec_time,
-          .update_time_utc = updated_time,
-          .external_account = {},
-          .external_order_id = order_id,
-          .client_order_id = client_oid,
-          .fills = shared_.fills,
-          .routing_id = {},
-          .update_type = map(fill.action),
-          .sending_time_utc = fill.ts,
-          .user = {},
-          .strategy_id = {},
-      };
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, trade_update, true, SOURCE_NONE);
-      log::warn("DEBUG trade_update={}"sv, trade_update);
-      shared_.fills.clear();
-    }
+void DropCopy::operator()(Trace<protocol::json::OrderTradeUpdate> const &event) {
+  auto &[trace_info, order_trade_update] = event;
+  log::info<2>("order_trade_update={}"sv, order_trade_update);
+  log::warn("DEBUG order_trade_update={}"sv, order_trade_update);
+  auto &order = order_trade_update.order;
+  auto external_order_id = fmt::format("{}"sv, order.order_id);
+  auto remaining_quantity = order.original_quantity - order.accumulated_quantity;
+  auto order_update = server::oms::OrderUpdate{
+      .account = account_.name,
+      .exchange = shared_.settings.exchange,
+      .symbol = order.symbol,
+      .side = map(order.side),
+      .position_effect = map(order.position_side, order.side),
+      .margin_mode = {},
+      .max_show_quantity = NaN,
+      .order_type = map(order.order_type),
+      .time_in_force = map(order.time_in_force),
+      .execution_instructions = {},  // XXX order_type + reduce_only
+      .execution_destination = {},
+      .create_time_utc = {},
+      .update_time_utc = order.order_trade_time,
+      .external_account = {},
+      .external_order_id = external_order_id,
+      .client_order_id = order.client_order_id,
+      .order_status = map(order.order_status),
+      .error = {},
+      .text = {},
+      .quantity = order.original_quantity,
+      .price = order.original_price,
+      .stop_price = NaN,
+      .leverage = NaN,
+      .remaining_quantity = remaining_quantity,
+      .traded_quantity = order.accumulated_quantity,
+      .average_traded_price = order.average_price,
+      .last_traded_quantity = order.last_filled_quantity,
+      .last_traded_price = order.last_filled_price,
+      .last_liquidity = {},
+      .routing_id = {},
+      .max_request_version = {},
+      .max_response_version = {},
+      .max_accepted_version = {},
+      .update_type = UpdateType::INCREMENTAL,
+      .sending_time_utc = order_trade_update.event_time,
   };
-  shared_.fills.clear();
-  for (auto &item : fill.data) {
-    if (item.symbol != symbol || item.order_id != order_id || item.client_oid != client_oid || item.side != side || item.trade_side != trade_side) {
-      dispatch();
-      symbol = item.symbol;
-      order_id = item.order_id;
-      client_oid = item.client_oid;
-      side = item.side;
-      trade_side = item.trade_side;
-      exec_time = {};
-      updated_time = {};
-    }
-    std::string_view fee_coin;
-    double fee = 0.0;
-    bool please_report = false;
-    for (auto &item_2 : item.fee_detail) {
-      if (!std::isnan(item_2.fee)) {
-        fee += item_2.fee;
-      }
-      if (!std::empty(item_2.fee_coin)) {
-        if (std::empty(fee_coin)) {
-          fee_coin = item_2.fee_coin;
-        } else if (item_2.fee_coin != fee_coin) {
-          log::warn(R"(fee_coin="{}"!="{}")"sv, item_2.fee_coin, fee_coin);
-        }
-      }
-    }
-    if (please_report) {
-      log::warn("*** PLEASE REPORT *** fill={}"sv, item);
-    }
-    auto fill = Fill{
-        .exchange_time_utc = item.exec_time,
-        .external_trade_id = item.exec_id,
-        .quantity = item.exec_qty,
-        .price = item.exec_price,
-        .liquidity = map(item.trade_scope),
-        .commission_amount = fee,
-        .commission_currency = fee_coin,
-        .base_amount = NaN,   // XXX FIXME TODO
-        .quote_amount = NaN,  // XXX FIXME TODO
-        .profit_loss_amount = NaN,
-    };
-    shared_.fills.emplace_back(std::move(fill));
-    if (exec_time < item.exec_time) {
-      exec_time = item.exec_time;
-    }
-    if (updated_time < item.updated_time) {
-      updated_time = item.updated_time;
-    }
-  }
-  dispatch();
+  log::warn("DEBUG order_update={}"sv, order_update);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
 }
 
 // helpers
 
-void DropCopy::login(TraceInfo const &trace_info) {
-  /*
-  auto message = account_.create_ws_login(trace_info);
-  log::debug("message={}"sv, message);
-  (*connection_).send_text(message);
-  */
-}
-
-void DropCopy::subscribe() {
-  subscribe("account"sv);
-  subscribe("position"sv);
-  subscribe("order"sv);
-  subscribe("fill"sv);
-}
-
-void DropCopy::subscribe(std::string_view const &topic) {
-  log::info(R"(Subscribe topic="{}")"sv, topic);
-  auto message = fmt::format(
-      R"({{)"
-      R"("op":"subscribe",)"
-      R"("args":[{{)"
-      R"("instType":"UTA",)"
-      R"("topic":"{}")"
-      R"(}})"
-      R"(])"
-      R"(}})"sv,
-      topic);
-  log::debug("message={}"sv, message);
-  (*connection_).send_text(message);
+void DropCopy::check_response(TraceInfo const &trace_info) {
+  switch (download_.state()) {
+    using enum State;
+    case UNDEFINED:
+      break;
+    case ACCOUNT:
+      if (request_.account.has_response()) {
+        download_.check(trace_info, State::ACCOUNT);
+      }
+      break;
+    case OPEN_ORDERS:
+      if (request_.open_orders.has_response()) {
+        download_.check(trace_info, State::OPEN_ORDERS);
+      }
+      break;
+    case USER_TRADES:
+      if (request_.user_trades.has_response()) {
+        download_.check(trace_info, State::USER_TRADES);
+      }
+      break;
+    case DONE:
+      break;
+  }
 }
 
 void DropCopy::parse(TraceInfo const &trace_info, std::string_view const &message) {

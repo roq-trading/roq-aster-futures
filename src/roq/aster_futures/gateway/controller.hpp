@@ -12,6 +12,7 @@
 
 #include "roq/aster_futures/gateway/account.hpp"
 #include "roq/aster_futures/gateway/config.hpp"
+#include "roq/aster_futures/gateway/request.hpp"
 #include "roq/aster_futures/gateway/settings.hpp"
 #include "roq/aster_futures/gateway/shared.hpp"
 
@@ -79,6 +80,10 @@ struct Controller final : public Base<Controller>,
 
   void operator()(Trace<SymbolsUpdate> const &) override;
 
+  // OrderEntry::Handler
+
+  void operator()(Trace<ListenKeyUpdate> const &) override;
+
   // helpers
 
   void ensure_symbol_slices(TraceInfo const &, size_t size);
@@ -101,6 +106,7 @@ struct Controller final : public Base<Controller>,
   io::Context &context_;
   // shared
   Shared shared_;
+  utils::unordered_map<std::string, std::unique_ptr<Request>> const requests_;
   // seed
   uint16_t stream_id_ = {};
   // streams

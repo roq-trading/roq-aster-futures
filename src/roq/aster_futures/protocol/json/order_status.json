@@ -3,19 +3,19 @@
   "type": "enum",
   "values": [
     {
-      "name": "live"
+      "name": "LIVE"
     },
     {
-      "name": "new"
+      "name": "NEW"
     },
     {
-      "name": "partially_filled"
+      "name": "PARTIALLY_FILLED"
     },
     {
-      "name": "filled"
+      "name": "FILLED"
     },
     {
-      "name": "cancelled"
+      "name": "CANCELED"
     }
   ]
 }
