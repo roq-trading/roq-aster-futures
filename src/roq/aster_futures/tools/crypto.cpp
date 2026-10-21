@@ -36,8 +36,7 @@ std::string Crypto::sign_message(std::chrono::microseconds now_utc, std::string_
   if (!std::empty(message)) {
     fmt::format_to(std::back_inserter(message_for_signing), "{}&"sv, message);
   }
-  fmt::format_to(std::back_inserter(message_for_signing), "nonce={}&signer={}"sv, now_utc.count(), key_);
-  log::warn(R"(DEBUG message_for_signining="{}")"sv, message_for_signing);
+  fmt::format_to(std::back_inserter(message_for_signing), "nonce={}&signer={}"sv, now_utc.count(), account_.get_address());
   std::array<utils::eth::Field, 1> data{{
       {
           .name = "msg"sv,
@@ -51,7 +50,7 @@ std::string Crypto::sign_message(std::chrono::microseconds now_utc, std::string_
   };
   auto signable_message = utils::eth::Messages::encode_typed_data(hash_, EIP712_DOMAIN, message_2);
   auto signed_message = account_.sign_message(hash_, signable_message);
-  return fmt::format("?{}&signature={}"sv, message_for_signing, utils::codec::HexPrinter{signed_message.signature()});
+  return fmt::format("?{}&signature={}"sv, message_for_signing, utils::codec::HexPrinter{signed_message.signature});
 }
 
 }  // namespace tools
