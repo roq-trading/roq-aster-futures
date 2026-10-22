@@ -12,7 +12,7 @@
     },
     {
       "name": "futuresType",
-      "type": "std/string_view"
+      "type": "roq/aster_futures/protocol/json/FuturesType"
     },
     {
       "name": "rateLimits"

@@ -1,0 +1,46 @@
+{
+  "name": "roq/aster_futures/protocol/json/MarginCallPositionsItem",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "s",
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "raw": "ps",
+      "name": "position_side",
+      "type": "roq/aster_futures/protocol/json/PositionSide"
+    },
+    {
+      "raw": "pa",
+      "name": "position_amount",
+      "type": "std/double"
+    },
+    {
+      "raw": "mt",
+      "name": "margin_type",
+      "type": "roq/aster_futures/protocol/json/MarginType"
+    },
+    {
+      "raw": "iw",
+      "name": "isolated_wallet",
+      "type": "std/double"
+    },
+    {
+      "raw": "mp",
+      "name": "mark_price",
+      "type": "std/double"
+    },
+    {
+      "raw": "up",
+      "name": "unrealized_pnl",
+      "type": "std/double"
+    },
+    {
+      "raw": "mm",
+      "name": "maintenance_margin_required",
+      "type": "std/double"
+    }
+  ]
+}

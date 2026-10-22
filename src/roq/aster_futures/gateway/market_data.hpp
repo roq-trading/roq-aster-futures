@@ -70,16 +70,21 @@ struct MarketData final : public Base<MarketData>,
   // protocol::json::Parser::Handler
 
   void operator()(Trace<protocol::json::Pong> const &) override;
+  // - market data
   void operator()(Trace<protocol::json::Ack> const &) override;
-
   void operator()(Trace<protocol::json::AggTrade> const &) override;
   void operator()(Trace<protocol::json::MarkPriceUpdate> const &) override;
   void operator()(Trace<protocol::json::MiniTicker> const &) override;
   void operator()(Trace<protocol::json::Ticker> const &) override;
   void operator()(Trace<protocol::json::BookTicker> const &) override;
   void operator()(Trace<protocol::json::DepthUpdate> const &) override;
-
+  void operator()(Trace<protocol::json::ForceOrder> const &) override;
+  // - order management
+  void operator()(Trace<protocol::json::ListenKeyExpired> const &) override;
+  void operator()(Trace<protocol::json::MarginCall> const &) override;
+  void operator()(Trace<protocol::json::AccountUpdate> const &) override;
   void operator()(Trace<protocol::json::OrderTradeUpdate> const &) override;
+  void operator()(Trace<protocol::json::AccountConfigUpdate> const &) override;
 
   // helpers
 

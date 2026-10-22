@@ -13,6 +13,7 @@ set(SOURCES
     json_mark_price_update.cpp
     json_mini_ticker.cpp
     json_ticker.cpp
+    json_force_order.cpp
     # rest
     json_account_ack.cpp
     json_listen_key_ack.cpp
@@ -20,8 +21,14 @@ set(SOURCES
     json_user_trades_ack.cpp
     json_place_order_ack.cpp
     json_cancel_order_ack.cpp
+    json_modify_order_ack.cpp
+    json_cancel_all_orders_ack.cpp
     # ws
     json_order_trade_update.cpp
+    json_listen_key_expired.cpp
+    json_account_update.cpp
+    json_margin_call.cpp
+    json_account_config_update.cpp
     main.cpp)
 
 roq_gitignore(OUTPUT .gitignore SOURCES ${TARGET_NAME})

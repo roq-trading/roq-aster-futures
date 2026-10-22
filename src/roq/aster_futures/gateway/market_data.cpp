@@ -7,7 +7,6 @@
 #include "roq/mask.hpp"
 
 #include "roq/utils/safe_cast.hpp"
-// #include "roq/utils/update.hpp"
 
 #include "roq/utils/exceptions/unhandled.hpp"
 
@@ -222,6 +221,8 @@ void MarketData::operator()(Trace<protocol::json::Pong> const &event) {
   });
 }
 
+// - market data
+
 void MarketData::operator()(Trace<protocol::json::Ack> const &event) {
   profile_.ack([&]() {
     auto &[trace_info, ack] = event;
@@ -233,6 +234,7 @@ void MarketData::operator()(Trace<protocol::json::AggTrade> const &event) {
   profile_.agg_trade([&]() {
     auto &[trace_info, agg_trade] = event;
     log::info<4>("agg_trade={}"sv, agg_trade);
+    // log::warn("DEBUG agg_trade={}"sv, agg_trade);
     auto trade = Trade{
         .trade_conditions = {},
         .trade_type = {},
@@ -261,6 +263,7 @@ void MarketData::operator()(Trace<protocol::json::MarkPriceUpdate> const &event)
   profile_.mark_price_update([&]() {
     auto &[trace_info, mark_price_update] = event;
     log::info<4>("mark_price_update={}"sv, mark_price_update);
+    // log::warn("DEBUG mark_price_update={}"sv, mark_price_update);
     std::array<Statistics, 4> statistics{{
         {
             .type = StatisticsType::SETTLEMENT_PRICE,
@@ -305,6 +308,7 @@ void MarketData::operator()(Trace<protocol::json::MiniTicker> const &event) {
   profile_.mini_ticker([&]() {
     auto &[trace_info, mini_ticker] = event;
     log::info<4>("mini_ticker={}"sv, mini_ticker);
+    // log::warn("DEBUG mini_ticker={}"sv, mini_ticker);
     std::array<Statistics, 5> statistics{{
         {
             .type = StatisticsType::CLOSE_PRICE,
@@ -356,7 +360,7 @@ void MarketData::operator()(Trace<protocol::json::Ticker> const &event) {
   profile_.ticker([&]() {
     auto &[trace_info, ticker] = event;
     log::info<4>("ticker={}"sv, ticker);
-    // note! Ticker is enough
+    // log::warn("DEBUG ticker={}"sv, ticker);
   });
 }
 
@@ -364,6 +368,7 @@ void MarketData::operator()(Trace<protocol::json::BookTicker> const &event) {
   profile_.book_ticker([&]() {
     auto &[trace_info, book_ticker] = event;
     log::info<4>("book_ticker={}"sv, book_ticker);
+    // log::warn("DEBUG book_ticker={}"sv, book_ticker);
     auto top_of_book = TopOfBook{
         .stream_id = stream_id_,
         .exchange = shared_.settings.exchange,
@@ -387,6 +392,7 @@ void MarketData::operator()(Trace<protocol::json::DepthUpdate> const &event) {
   profile_.depth_update([&]() {
     auto &[trace_info, depth_update] = event;
     log::info<4>("depth_update={}"sv, depth_update);
+    // log::warn("DEBUG depth_update={}"sv, depth_update);
     auto helper = [](auto &result, auto &item) {
       auto mbp_update = MBPUpdate{
           .price = item.price,
@@ -463,7 +469,31 @@ void MarketData::operator()(Trace<protocol::json::DepthUpdate> const &event) {
   });
 }
 
+void MarketData::operator()(Trace<protocol::json::ForceOrder> const &event) {
+  auto &[trace_info, force_order] = event;
+  log::info<2>("force_order={}"sv, force_order);
+  log::warn("DEBUG force_order={}"sv, force_order);
+}
+
+// - order management
+
+void MarketData::operator()(Trace<protocol::json::ListenKeyExpired> const &) {
+  log::fatal("Unexpected"sv);
+}
+
+void MarketData::operator()(Trace<protocol::json::MarginCall> const &) {
+  log::fatal("Unexpected"sv);
+}
+
+void MarketData::operator()(Trace<protocol::json::AccountUpdate> const &) {
+  log::fatal("Unexpected"sv);
+}
+
 void MarketData::operator()(Trace<protocol::json::OrderTradeUpdate> const &) {
+  log::fatal("Unexpected"sv);
+}
+
+void MarketData::operator()(Trace<protocol::json::AccountConfigUpdate> const &) {
   log::fatal("Unexpected"sv);
 }
 
@@ -502,6 +532,7 @@ void MarketData::subscribe(std::span<Symbol const> const &symbols, std::span<std
         ++request_id_,
         symbol,
         fmt::join(streams, separator));
+    log::warn("DEBUG {}"sv, message);
     request_queue_.emplace_back(std::move(message));
   }
 }

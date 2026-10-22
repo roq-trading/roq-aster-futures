@@ -3,16 +3,16 @@
   "type": "enum",
   "values": [
     {
-      "name": "IOC"
-    },
-    {
-      "name": "FOK"
-    },
-    {
       "name": "GTC"
     },
     {
-      "name": "POST_ONLY"
+      "name": "IOC"
+    },
+    {
+      "name": "GTX"
+    },
+    {
+      "name": "HIDDEN"
     }
   ]
 }

@@ -3,9 +3,6 @@
   "type": "enum",
   "values": [
     {
-      "name": "LIVE"
-    },
-    {
       "name": "NEW"
     },
     {
@@ -16,6 +13,12 @@
     },
     {
       "name": "CANCELED"
+    },
+    {
+      "name": "REJECTED"
+    },
+    {
+      "name": "EXPIRED"
     }
   ]
 }

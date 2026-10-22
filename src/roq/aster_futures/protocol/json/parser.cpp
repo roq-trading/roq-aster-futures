@@ -53,7 +53,7 @@ bool Parser::dispatch(
   };
   core::json::Parser::dispatch<core::json::Object>(helper, message);
   if (ack) {
-    return true;
+    return dispatch_helper<Ack>(handler, message, buffer_stack, trace_info);
   }
   switch (event_type) {
     using enum EventType::type_t;
@@ -61,6 +61,9 @@ bool Parser::dispatch(
       log::fatal("Unexpected"sv);
     case UNKNOWN_INTERNAL:
       break;
+    case ANNOUNCEMENT:
+      return false;  // note! will be logged
+    // market data
     case AGG_TRADE:
       return dispatch_helper<AggTrade>(handler, message, buffer_stack, trace_info);
     case MARK_PRICE_UPDATE:
@@ -73,9 +76,19 @@ bool Parser::dispatch(
       return dispatch_helper<BookTicker>(handler, message, buffer_stack, trace_info);
     case DEPTH_UPDATE:
       return dispatch_helper<DepthUpdate>(handler, message, buffer_stack, trace_info);
-    //
+    case FORCE_ORDER:
+      return dispatch_helper<ForceOrder>(handler, message, buffer_stack, trace_info);
+    // order management
+    case LISTEN_KEY_EXPIRED:
+      return dispatch_helper<ListenKeyExpired>(handler, message, buffer_stack, trace_info);
+    case MARGIN_CALL:
+      return dispatch_helper<MarginCall>(handler, message, buffer_stack, trace_info);
+    case ACCOUNT_UPDATE:
+      return dispatch_helper<AccountUpdate>(handler, message, buffer_stack, trace_info);
     case ORDER_TRADE_UPDATE:
       return dispatch_helper<OrderTradeUpdate>(handler, message, buffer_stack, trace_info);
+    case ACCOUNT_CONFIG_UPDATE:
+      return dispatch_helper<AccountConfigUpdate>(handler, message, buffer_stack, trace_info);
   }
   if (allow_unknown_event_types) {
     return false;

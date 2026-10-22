@@ -162,7 +162,7 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
 
   // countdown-cancel-all
 
-  void countdown_cancel_all();
+  void countdown_cancel_all(TraceInfo const &);
   void countdown_cancel_all_ack(Trace<web::rest::Response> const &);
   // void operator()(Trace<protocol::json::CancelAllOrdersAck> const &, uint8_t user_id);
 

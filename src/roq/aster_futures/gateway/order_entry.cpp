@@ -134,7 +134,7 @@ void OrderEntry::operator()(Trace<Timer> const &event) {
       //
       if (shared_.settings.rest.cancel_on_disconnect && next_heartbeat_ < timer.now) {
         next_heartbeat_ = timer.now + (shared_.settings.rest.ping_freq / 3);
-        countdown_cancel_all();
+        countdown_cancel_all(trace_info);
       }
     }
   }
@@ -279,13 +279,13 @@ int32_t OrderEntry::download(Trace<State> const &event) {
 
 void OrderEntry::get_listen_key(TraceInfo const &trace_info) {
   profile_.listen_key([&]() {
-    auto method = web::http::Method::POST;
-    auto path = shared_.api.order_management.listen_key;
-    auto query = account_.create_query(trace_info);
+    auto query = protocol::json::Encoder::listen_key(encode_buffer_);
+    log::warn(R"(DEBUG query="{}")"sv, query);
+    auto query_2 = account_.create_query(trace_info, query);
     auto request = web::rest::Request{
-        .method = method,
-        .path = path,
-        .query = query,
+        .method = web::http::Method::POST,
+        .path = shared_.api.order_management.listen_key,
+        .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
         .headers = {},
@@ -336,13 +336,13 @@ void OrderEntry::operator()(Trace<protocol::json::ListenKeyAck> const &event) {
 
 void OrderEntry::get_account(TraceInfo const &trace_info) {
   profile_.account([&]() {
-    auto method = web::http::Method::GET;
-    auto path = shared_.api.order_management.account;
-    auto query = account_.create_query(trace_info);
+    auto query = protocol::json::Encoder::account(encode_buffer_);
+    log::warn(R"(DEBUG query="{}")"sv, query);
+    auto query_2 = account_.create_query(trace_info, query);
     auto request = web::rest::Request{
-        .method = method,
-        .path = path,
-        .query = query,
+        .method = web::http::Method::GET,
+        .path = shared_.api.order_management.account,
+        .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
         .headers = {},
@@ -395,16 +395,15 @@ void OrderEntry::operator()(Trace<protocol::json::AccountAck> const &event) {
 
 void OrderEntry::get_open_orders(TraceInfo const &trace_info) {
   profile_.open_orders([&]() {
-    auto method = web::http::Method::GET;
-    auto path = shared_.api.order_management.open_orders;
-    auto query = fmt::format("?category={}"sv, shared_.api.category);
+    auto query = protocol::json::Encoder::open_orders(encode_buffer_);
+    log::warn(R"(DEBUG query="{}")"sv, query);
     auto query_2 = account_.create_query(trace_info, query);
     auto request = web::rest::Request{
-        .method = method,
-        .path = path,
+        .method = web::http::Method::GET,
+        .path = shared_.api.order_management.open_orders,
         .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
-        .content_type = {},
+        .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
         .headers = {},
         .body = {},
         .quality_of_service = {},
@@ -484,22 +483,26 @@ void OrderEntry::get_user_trades(TraceInfo const &trace_info) {
   assert(shared_.settings.rest.download_fills_begin.count() > 0);
   profile_.user_trades([&]() {
     auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(trace_info.origin_create_time_utc - shared_.settings.rest.download_fills_begin);
-    auto method = web::http::Method::GET;
-    auto path = shared_.api.order_management.user_trades;
-    auto query = fmt::format("?category={}&startTime={}"sv, shared_.api.category, start_time.count());
-    auto query_2 = account_.create_query(trace_info, query);
-    auto request = web::rest::Request{
-        .method = method,
-        .path = path,
-        .query = query_2,
-        .accept = web::http::Accept::APPLICATION_JSON,
-        .content_type = {},
-        .headers = {},
-        .body = {},
-        .quality_of_service = {},
+    auto helper = [&](auto &symbol) {
+      auto query = protocol::json::Encoder::user_trades(encode_buffer_, start_time, symbol);
+      log::warn(R"(DEBUG query="{}")"sv, query);
+      auto query_2 = account_.create_query(trace_info, query);
+      auto request = web::rest::Request{
+          .method = web::http::Method::GET,
+          .path = shared_.api.order_management.user_trades,
+          .query = query_2,
+          .accept = web::http::Accept::APPLICATION_JSON,
+          .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
+          .headers = {},
+          .body = {},
+          .quality_of_service = {},
+      };
+      auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_user_trades_ack(event); };
+      (*connection_)(request, callback, "user_trades"sv);
     };
-    auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_user_trades_ack(event); };
-    (*connection_)(request, callback, "user_trades"sv);
+    for (auto &symbol : shared_.settings.download.symbols) {
+      helper(symbol);
+    }
   });
 }
 
@@ -627,7 +630,7 @@ void OrderEntry::operator()(
       .max_request_version = {},
       .max_response_version = {},
       .max_accepted_version = {},
-      .update_type = UpdateType::SNAPSHOT,
+      .update_type = UpdateType::INCREMENTAL,
       .sending_time_utc = {},
   };
   log::warn("DEBUG order_update={}"sv, order_update);
@@ -647,19 +650,17 @@ void OrderEntry::modify_order(
       throw server::oms::NotReady{"not ready"sv};
     }
     auto &[message_info, modify_order] = event;
-    auto method = web::http::Method::POST;
-    auto path = shared_.api.order_management.modify_order;
-    auto query = fmt::format("?category={}"sv, shared_.api.category);
-    auto body = protocol::json::Encoder::modify_order(encode_buffer_, modify_order, order, ref_data, request_id);
-    log::warn(R"(DEBUG body="{}")"sv, body);
+    auto query = protocol::json::Encoder::modify_order(encode_buffer_, modify_order, order, ref_data, request_id);
+    log::warn(R"(DEBUG query="{}")"sv, query);
+    auto query_2 = account_.create_query(message_info, query);
     auto request = web::rest::Request{
-        .method = method,
-        .path = path,
-        .query = query,
+        .method = web::http::Method::PUT,
+        .path = shared_.api.order_management.modify_order,
+        .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
         .headers = {},
-        .body = body,
+        .body = {},
         .quality_of_service = {},
     };
     auto callback = [this, user_id = message_info.source, order_id = modify_order.order_id, version = modify_order.version](
@@ -690,11 +691,7 @@ void OrderEntry::modify_order_ack(Trace<web::rest::Response> const &event, uint8
     };
     auto handle_success = [&](auto &body) {
       protocol::json::ModifyOrderAck modify_order_ack{body, decode_buffer_};
-      if (modify_order_ack.code == 0) {
-        create_trace_and_dispatch_2(trace_info, modify_order_ack, user_id, order_id, version);
-      } else {
-        handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(modify_order_ack.code), modify_order_ack.msg);
-      }
+      create_trace_and_dispatch_2(trace_info, modify_order_ack, user_id, order_id, version);
     };
     process_response(event, handle_error, handle_success);
   });
@@ -708,6 +705,47 @@ void OrderEntry::operator()(
   auto &[trace_info, modify_order_ack] = event;
   log::info<2>("modify_order_ack={}"sv, modify_order_ack);
   log::warn("DEBUG modify_order_ack={}"sv, modify_order_ack);
+  auto external_order_id = fmt::format("{}"sv, modify_order_ack.order_id);
+  auto remaining_quantity = modify_order_ack.orig_qty - modify_order_ack.executed_qty;
+  auto order_update = server::oms::OrderUpdate{
+      .account = account_.name,
+      .exchange = shared_.settings.exchange,
+      .symbol = modify_order_ack.symbol,
+      .side = map(modify_order_ack.side),
+      .position_effect = map(modify_order_ack.position_side, modify_order_ack.side),
+      .margin_mode = {},
+      .max_show_quantity = NaN,
+      .order_type = map(modify_order_ack.type),
+      .time_in_force = map(modify_order_ack.time_in_force),
+      .execution_instructions = {},  // XXX map from time_in_force + reduce_only
+      .execution_destination = {},
+      .create_time_utc = modify_order_ack.update_time,
+      .update_time_utc = modify_order_ack.update_time,
+      .external_account = {},
+      .external_order_id = external_order_id,
+      .client_order_id = modify_order_ack.client_order_id,
+      .order_status = map(modify_order_ack.status),
+      .error = {},
+      .text = {},
+      .quantity = modify_order_ack.orig_qty,
+      .price = modify_order_ack.price,
+      .stop_price = NaN,
+      .leverage = NaN,
+      .remaining_quantity = remaining_quantity,
+      .traded_quantity = modify_order_ack.executed_qty,
+      .average_traded_price = modify_order_ack.avg_price,
+      .last_traded_quantity = NaN,
+      .last_traded_price = NaN,
+      .last_liquidity = {},
+      .routing_id = {},
+      .max_request_version = {},
+      .max_response_version = {},
+      .max_accepted_version = {},
+      .update_type = UpdateType::INCREMENTAL,
+      .sending_time_utc = {},
+  };
+  log::warn("DEBUG order_update={}"sv, order_update);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
 }
 
 // cancel-order
@@ -814,7 +852,7 @@ void OrderEntry::operator()(
       .max_request_version = {},
       .max_response_version = {},
       .max_accepted_version = {},
-      .update_type = UpdateType::SNAPSHOT,
+      .update_type = UpdateType::INCREMENTAL,
       .sending_time_utc = {},
   };
   log::warn("DEBUG order_update={}"sv, order_update);
@@ -829,22 +867,28 @@ void OrderEntry::cancel_all_orders(Event<CancelAllOrders> const &event, std::str
       throw server::oms::NotReady{"not ready"sv};
     }
     auto &[message_info, cancel_all_orders] = event;
-    auto method = web::http::Method::POST;
-    auto path = shared_.api.order_management.cancel_all_orders;
-    auto query = fmt::format("?category={}"sv, shared_.api.category);
-    auto body = protocol::json::Encoder::cancel_all_orders(encode_buffer_, cancel_all_orders, request_id, shared_.api.category);
-    auto request = web::rest::Request{
-        .method = method,
-        .path = path,
-        .query = query,
-        .accept = web::http::Accept::APPLICATION_JSON,
-        .content_type = web::http::ContentType::APPLICATION_JSON,
-        .headers = {},
-        .body = body,
-        .quality_of_service = {},
+    auto helper = [&](std::string_view const &symbol) {
+      auto query = protocol::json::Encoder::cancel_all_orders(encode_buffer_, cancel_all_orders, request_id, symbol);
+      log::warn(R"(DEBUG query="{}")"sv, query);
+      auto query_2 = account_.create_query(message_info, query);
+      auto request = web::rest::Request{
+          .method = web::http::Method::DELETE,
+          .path = shared_.api.order_management.cancel_all_orders,
+          .query = query_2,
+          .accept = web::http::Accept::APPLICATION_JSON,
+          .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
+          .headers = {},
+          .body = {},
+          .quality_of_service = {},
+      };
+      auto callback = [this, user_id = message_info.source](auto &event, [[maybe_unused]] auto &request_id) { cancel_all_orders_ack(event, user_id); };
+      (*connection_)(request, callback, request_id);
     };
-    auto callback = [this, user_id = message_info.source](auto &event, [[maybe_unused]] auto &request_id) { cancel_all_orders_ack(event, user_id); };
-    (*connection_)(request, callback, request_id);
+    if (std::empty(cancel_all_orders.symbol)) {
+      helper("BTCUSDT"sv);  // XXX FIXME TODO
+    } else {
+      helper({});
+    }
   });
 }
 
@@ -893,20 +937,20 @@ void OrderEntry::operator()(Trace<protocol::json::CancelAllOrdersAck> const &eve
 
 // countdown-cancel-all
 
-void OrderEntry::countdown_cancel_all() {
+void OrderEntry::countdown_cancel_all(TraceInfo const &trace_info) {
   profile_.countdown_cancel_all([&]() {
-    auto method = web::http::Method::POST;
-    auto path = shared_.api.order_management.countdown_cancel_all;
-    auto body =
-        protocol::json::Encoder::countdown_cancel_all(encode_buffer_, std::chrono::duration_cast<std::chrono::seconds>(shared_.settings.rest.ping_freq));
+    auto query =
+        protocol::json::Encoder::countdown_cancel_all(encode_buffer_, std::chrono::duration_cast<std::chrono::seconds>(shared_.settings.rest.ping_freq), {});
+    log::warn(R"(DEBUG query="{}")"sv, query);
+    auto query_2 = account_.create_query(trace_info, query);
     auto request = web::rest::Request{
-        .method = method,
-        .path = path,
-        .query = {},
+        .method = web::http::Method::POST,
+        .path = shared_.api.order_management.countdown_cancel_all,
+        .query = query_2,
         .accept = web::http::Accept::APPLICATION_JSON,
-        .content_type = web::http::ContentType::APPLICATION_JSON,
+        .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
         .headers = {},
-        .body = body,
+        .body = {},
         .quality_of_service = {},
     };
     auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { countdown_cancel_all_ack(event); };

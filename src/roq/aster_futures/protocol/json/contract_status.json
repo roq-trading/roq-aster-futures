@@ -1,0 +1,21 @@
+{
+  "name": "roq/aster_futures/protocol/json/ContractStatus",
+  "type": "enum",
+  "values": [
+    {
+      "name": "PENDING_TRADING"
+    },
+    {
+      "name": "TRADING"
+    },
+    {
+      "name": "PRE_SETTLE"
+    },
+    {
+      "name": "SETTLING"
+    },
+    {
+      "name": "CLOSE"
+    }
+  ]
+}

@@ -11,8 +11,6 @@ namespace aster_futures {
 namespace gateway {
 
 struct API final {
-  std::string_view category;   // XXX FIXME TODO remove ???
-  std::string_view inst_type;  // XXX FIXME TODO remove ???
   struct {
     std::string_view exchange_info;
     std::string_view depth;

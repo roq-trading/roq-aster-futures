@@ -3,10 +3,25 @@
   "type": "enum",
   "values": [
     {
+      "name": "LIMIT"
+    },
+    {
       "name": "MARKET"
     },
     {
-      "name": "LIMIT"
+      "name": "STOP"
+    },
+    {
+      "name": "STOP_MARKET"
+    },
+    {
+      "name": "TAKE_PROFIT"
+    },
+    {
+      "name": "TAKE_PROFIT_MARKET"
+    },
+    {
+      "name": "TRAILING_STOP_MARKET"
     }
   ]
 }

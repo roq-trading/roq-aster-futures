@@ -3,7 +3,13 @@
   "type": "enum",
   "values": [
     {
+      "name": "EXPIRE_TAKER"
+    },
+    {
       "name": "EXPIRE_MAKER"
+    },
+    {
+      "name": "EXPIRE_BOTH"
     }
   ]
 }

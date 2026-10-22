@@ -1,0 +1,23 @@
+{
+  "name": "roq/aster_futures/protocol/json/AccountUpdateData",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "m",
+      "name": "event_reason_type",
+      "type": "roq/aster_futures/protocol/json/EventReasonType"
+    },
+    {
+      "raw": "B",
+      "name": "balances",
+      "type": "roq/aster_futures/protocol/json/AccountUpdateDataBalancesItem",
+      "array": "std/span"
+    },
+    {
+      "raw": "P",
+      "name": "positions",
+      "type": "roq/aster_futures/protocol/json/AccountUpdateDataPositionsItem",
+      "array": "std/span"
+    }
+  ]
+}

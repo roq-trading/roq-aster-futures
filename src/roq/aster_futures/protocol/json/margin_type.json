@@ -1,9 +1,9 @@
 {
-  "name": "roq/aster_futures/protocol/json/MarginMode",
+  "name": "roq/aster_futures/protocol/json/MarginType",
   "type": "enum",
   "values": [
     {
-      "name": "crossed"
+      "name": "CROSSED"
     },
     {
       "name": "isolated"

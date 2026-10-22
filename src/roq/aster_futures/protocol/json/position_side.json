@@ -4,6 +4,12 @@
   "values": [
     {
       "name": "BOTH"
+    },
+    {
+      "name": "LONG"
+    },
+    {
+      "name": "SHORT"
     }
   ]
 }

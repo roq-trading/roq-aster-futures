@@ -14,8 +14,6 @@ namespace gateway {
 
 API API::create(Settings const &) {
   return {
-      .category = {},
-      .inst_type = {},
       .market_data{
           .exchange_info = "/fapi/v3/exchangeInfo"sv,
           .depth = "/fapi/v3/depth"sv,
@@ -29,7 +27,7 @@ API API::create(Settings const &) {
           .modify_order = "/fapi/v3/order"sv,
           .cancel_order = "/fapi/v3/order"sv,
           .cancel_all_orders = "/fapi/v3/allOpenOrders"sv,
-          .countdown_cancel_all = "xxx"sv,
+          .countdown_cancel_all = "/fapi/v3/countdownCancelAll"sv,
       },
   };
 }

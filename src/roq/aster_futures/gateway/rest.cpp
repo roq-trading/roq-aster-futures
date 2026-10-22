@@ -200,11 +200,10 @@ int32_t Rest::download(Trace<State> const &event) {
 
 void Rest::get_exchange_info() {
   profile_.exchange_info([&]() {
-    auto query = fmt::format("?category={}"sv, shared_.api.category);
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
         .path = shared_.api.market_data.exchange_info,
-        .query = query,
+        .query = {},
         .accept = web::http::Accept::APPLICATION_JSON,
         .content_type = {},
         .headers = {},

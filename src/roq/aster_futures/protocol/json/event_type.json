@@ -3,6 +3,9 @@
   "type": "enum",
   "values": [
     {
+      "name": "announcement"
+    },
+    {
       "name": "aggTrade"
     },
     {
@@ -21,7 +24,22 @@
       "name": "depthUpdate"
     },
     {
+      "name": "forceOrder"
+    },
+    {
+      "name": "listenKeyExpired"
+    },
+    {
+      "name": "MARGIN_CALL"
+    },
+    {
+      "name": "ACCOUNT_UPDATE"
+    },
+    {
       "name": "ORDER_TRADE_UPDATE"
+    },
+    {
+      "name": "ACCOUNT_CONFIG_UPDATE"
     }
   ]
 }

@@ -1,0 +1,26 @@
+{
+  "name": "roq/aster_futures/protocol/json/AccountUpdate",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "roq/aster_futures/protocol/json/EventType"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "T",
+      "name": "transaction_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "a",
+      "name": "data",
+      "type": "roq/aster_futures/protocol/json/AccountUpdateData"
+    }
+  ]
+}

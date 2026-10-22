@@ -4,15 +4,11 @@
   "values": [
     {
       "name": "id",
-      "type": "std/int32"
-    },
-    {
-      "name": "error",
-      "type": "roq/aster_futures/protocol/json/AckError"
+      "type": "std/int64"
     },
     {
       "name": "result",
-      "type": "roq/aster_futures/protocol/json/AckResult"
+      "type": "std/string_view"
     }
   ]
 }

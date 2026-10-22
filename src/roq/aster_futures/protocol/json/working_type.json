@@ -3,6 +3,9 @@
   "type": "enum",
   "values": [
     {
+      "name": "MARK_PRICE"
+    },
+    {
       "name": "CONTRACT_PRICE"
     }
   ]

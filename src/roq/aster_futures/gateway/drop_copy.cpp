@@ -232,6 +232,8 @@ void DropCopy::operator()(Trace<protocol::json::Pong> const &event) {
   log::warn("DEBUG pong={}"sv, pong);
 }
 
+// - market data
+
 void DropCopy::operator()(Trace<protocol::json::Ack> const &event) {
   auto &[trace_info, ack] = event;
   log::warn("DEBUG ack={}"sv, ack);
@@ -259,6 +261,24 @@ void DropCopy::operator()(Trace<protocol::json::BookTicker> const &) {
 
 void DropCopy::operator()(Trace<protocol::json::DepthUpdate> const &) {
   log::fatal("Unexpected"sv);
+}
+
+void DropCopy::operator()(Trace<protocol::json::ForceOrder> const &) {
+  log::fatal("Unexpected"sv);
+}
+
+// - order management
+
+void DropCopy::operator()(Trace<protocol::json::ListenKeyExpired> const &event) {
+  auto &[trace_info, listen_key_expired] = event;
+}
+
+void DropCopy::operator()(Trace<protocol::json::MarginCall> const &event) {
+  auto &[trace_info, margin_call] = event;
+}
+
+void DropCopy::operator()(Trace<protocol::json::AccountUpdate> const &event) {
+  auto &[trace_info, account_update] = event;
 }
 
 void DropCopy::operator()(Trace<protocol::json::OrderTradeUpdate> const &event) {
@@ -307,6 +327,10 @@ void DropCopy::operator()(Trace<protocol::json::OrderTradeUpdate> const &event) 
   };
   log::warn("DEBUG order_update={}"sv, order_update);
   create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
+}
+
+void DropCopy::operator()(Trace<protocol::json::AccountConfigUpdate> const &event) {
+  auto &[trace_info, account_config_update] = event;
 }
 
 // helpers

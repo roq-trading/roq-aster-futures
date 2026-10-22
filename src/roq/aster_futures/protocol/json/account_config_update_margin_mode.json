@@ -1,0 +1,21 @@
+{
+  "name": "roq/aster_futures/protocol/json/AccountConfigUpdateMarginMode",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "j",
+      "name": "multi_assets_mode",
+      "type": "std/bool"
+    },
+    {
+      "raw": "f",
+      "name": "specified_token_fee_deduction",
+      "type": "std/bool"
+    },
+    {
+      "raw": "d",
+      "name": "position_mode",
+      "type": "std/bool"
+    }
+  ]
+}

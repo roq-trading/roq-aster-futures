@@ -2,28 +2,96 @@
   "name": "roq/aster_futures/protocol/json/PlaceOrderAck",
   "type": "dictionary",
   "values": [
-    { "name": "orderId", "type": "std/int64" },
-    { "name": "symbol", "type": "std/string_view" },
-    { "name": "status", "type": "roq/aster_futures/protocol/json/OrderStatus" },
-    { "name": "clientOrderId", "type": "std/string_view" },
-    { "name": "price", "type": "std/double" },
-    { "name": "avgPrice", "type": "std/double" },
-    { "name": "origQty", "type": "std/double" },
-    { "name": "executedQty", "type": "std/double" },
-    { "name": "cumQty", "type": "std/double" },
-    { "name": "cumQuote", "type": "std/double" },
-    { "name": "timeInForce", "type": "roq/aster_futures/protocol/json/TimeInForce" },
-    { "name": "type", "type": "roq/aster_futures/protocol/json/OrderType" },
-    { "name": "reduceOnly", "type": "std/bool" },
-    { "name": "closePosition", "type": "std/bool" },
-    { "name": "side", "type": "roq/aster_futures/protocol/json/Side" },
-    { "name": "positionSide", "type": "roq/aster_futures/protocol/json/PositionSide" },
-    { "name": "stopPrice", "type": "std/double" },
-    { "name": "workingType", "type": "roq/aster_futures/protocol/json/WorkingType" },
-    { "name": "priceProtect", "type": "std/bool" },
-    { "name": "origType", "type": "roq/aster_futures/protocol/json/OrderType" },
-    { "name": "updateTime", "type": "std/milliseconds" },
-    { "name": "newChainData" },
-    { "name": "stpMode", "type": "roq/aster_futures/protocol/json/StpMode" }
+    {
+      "name": "orderId",
+      "type": "std/int64"
+    },
+    {
+      "name": "symbol",
+      "type": "std/string_view"
+    },
+    {
+      "name": "status",
+      "type": "roq/aster_futures/protocol/json/OrderStatus"
+    },
+    {
+      "name": "clientOrderId",
+      "type": "std/string_view"
+    },
+    {
+      "name": "price",
+      "type": "std/double"
+    },
+    {
+      "name": "avgPrice",
+      "type": "std/double"
+    },
+    {
+      "name": "origQty",
+      "type": "std/double"
+    },
+    {
+      "name": "executedQty",
+      "type": "std/double"
+    },
+    {
+      "name": "cumQty",
+      "type": "std/double"
+    },
+    {
+      "name": "cumQuote",
+      "type": "std/double"
+    },
+    {
+      "name": "timeInForce",
+      "type": "roq/aster_futures/protocol/json/TimeInForce"
+    },
+    {
+      "name": "type",
+      "type": "roq/aster_futures/protocol/json/OrderType"
+    },
+    {
+      "name": "reduceOnly",
+      "type": "std/bool"
+    },
+    {
+      "name": "closePosition",
+      "type": "std/bool"
+    },
+    {
+      "name": "side",
+      "type": "roq/aster_futures/protocol/json/Side"
+    },
+    {
+      "name": "positionSide",
+      "type": "roq/aster_futures/protocol/json/PositionSide"
+    },
+    {
+      "name": "stopPrice",
+      "type": "std/double"
+    },
+    {
+      "name": "workingType",
+      "type": "roq/aster_futures/protocol/json/WorkingType"
+    },
+    {
+      "name": "priceProtect",
+      "type": "std/bool"
+    },
+    {
+      "name": "origType",
+      "type": "roq/aster_futures/protocol/json/OrderType"
+    },
+    {
+      "name": "updateTime",
+      "type": "std/milliseconds"
+    },
+    {
+      "name": "newChainData"
+    },
+    {
+      "name": "stpMode",
+      "type": "roq/aster_futures/protocol/json/StpMode"
+    }
   ]
 }

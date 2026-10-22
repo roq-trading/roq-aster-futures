@@ -30,16 +30,21 @@ struct ParserTester final : public protocol::json::Parser::Handler {
   explicit ParserTester(callback_type const &callback) : callback_{callback} {}
 
   void operator()(Trace<protocol::json::Pong> const &event) override { dispatch_helper(event); }
+  // - market data
   void operator()(Trace<protocol::json::Ack> const &event) override { dispatch_helper(event); }
-  //
   void operator()(Trace<protocol::json::AggTrade> const &event) override { dispatch_helper(event); }
   void operator()(Trace<protocol::json::MarkPriceUpdate> const &event) override { dispatch_helper(event); }
   void operator()(Trace<protocol::json::MiniTicker> const &event) override { dispatch_helper(event); }
   void operator()(Trace<protocol::json::Ticker> const &event) override { dispatch_helper(event); }
   void operator()(Trace<protocol::json::BookTicker> const &event) override { dispatch_helper(event); }
   void operator()(Trace<protocol::json::DepthUpdate> const &event) override { dispatch_helper(event); }
-  //
+  void operator()(Trace<protocol::json::ForceOrder> const &event) override { dispatch_helper(event); }
+  // - order management
+  void operator()(Trace<protocol::json::ListenKeyExpired> const &event) override { dispatch_helper(event); }
+  void operator()(Trace<protocol::json::MarginCall> const &event) override { dispatch_helper(event); }
+  void operator()(Trace<protocol::json::AccountUpdate> const &event) override { dispatch_helper(event); }
   void operator()(Trace<protocol::json::OrderTradeUpdate> const &event) override { dispatch_helper(event); }
+  void operator()(Trace<protocol::json::AccountConfigUpdate> const &event) override { dispatch_helper(event); }
 
   template <typename U>
   void dispatch_helper(Trace<U> const &event) {

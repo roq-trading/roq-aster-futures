@@ -1,0 +1,27 @@
+{
+  "name": "roq/aster_futures/protocol/json/MarginCall",
+  "type": "dictionary",
+  "values": [
+    {
+      "raw": "e",
+      "name": "event_type",
+      "type": "roq/aster_futures/protocol/json/EventType"
+    },
+    {
+      "raw": "E",
+      "name": "event_time",
+      "type": "std/milliseconds"
+    },
+    {
+      "raw": "cw",
+      "name": "cross_wallet_balance",
+      "type": "std/double"
+    },
+    {
+      "raw": "p",
+      "name": "positions",
+      "type": "roq/aster_futures/protocol/json/MarginCallPositionsItem",
+      "array": "std/span"
+    }
+  ]
+}
