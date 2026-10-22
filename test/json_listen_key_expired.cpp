@@ -14,7 +14,8 @@ using value_type = protocol::json::ListenKeyExpired;
 TEST_CASE("simple", "[json_listen_key_expired]") {
   auto message = R"({)"
                  R"("e":"listenKeyExpired",)"
-                 R"("E":1576653824250)"
+                 R"("E":1792663498604,)"
+                 R"("listenKey":"HpllR9GyUo4fDCvbGxaPQ9cofBmIn5L7e9Mdqm1LABvltUfEK4LUzbmCDscOpiFF")"
                  R"(})";
   auto helper = [](value_type const &obj) { CHECK(obj.event_type == protocol::json::EventType::LISTEN_KEY_EXPIRED); };
   ParserTester<value_type>::dispatch(helper, message, 8192, 2);

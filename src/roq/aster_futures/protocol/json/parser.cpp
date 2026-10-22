@@ -80,7 +80,6 @@ bool Parser::dispatch(
       return dispatch_helper<ForceOrder>(handler, message, buffer_stack, trace_info);
     // order management
     case LISTEN_KEY_EXPIRED:
-      log::warn("DEBUG {}"sv, message);
       return dispatch_helper<ListenKeyExpired>(handler, message, buffer_stack, trace_info);
     case MARGIN_CALL:
       log::warn("DEBUG {}"sv, message);

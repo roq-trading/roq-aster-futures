@@ -33,6 +33,8 @@ auto const SUPPORTS = Mask{
 };
 
 size_t const MAX_DECODE_BUFFER_DEPTH = 2;
+
+auto const LISTEN_KEY_REFRESH_FREQ = 15min;
 }  // namespace
 
 // === HELPERS ===
@@ -104,6 +106,8 @@ OrderEntry::OrderEntry(Handler &handler, io::Context &context, uint16_t stream_i
           .cancel_all_orders_ack = create_metrics(shared.settings, name_, "cancel_all_orders_ack"sv),
           .countdown_cancel_all = create_metrics(shared.settings, name_, "countdown_cancel_all"sv),
           .countdown_cancel_all_ack = create_metrics(shared.settings, name_, "countdown_cancel_all_ack"sv),
+          .refresh_listen_key = create_metrics(shared.settings, name_, "refresh_listen_key"sv),
+          .refresh_listen_key_ack = create_metrics(shared.settings, name_, "refresh_listen_key_ack"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
@@ -136,6 +140,11 @@ void OrderEntry::operator()(Trace<Timer> const &event) {
         next_heartbeat_ = timer.now + (shared_.settings.rest.ping_freq / 3);
         countdown_cancel_all(trace_info);
       }
+      //
+      if (listen_key_refresh_.count() && listen_key_refresh_ < trace_info.origin_create_time) {
+        refresh_listen_key(trace_info);
+        listen_key_refresh_ = trace_info.origin_create_time + LISTEN_KEY_REFRESH_FREQ;
+      }
     }
   }
 }
@@ -163,6 +172,8 @@ void OrderEntry::operator()(metrics::Writer &writer) const {
       .write(profile_.cancel_all_orders_ack, metrics::Type::PROFILE)
       .write(profile_.countdown_cancel_all, metrics::Type::PROFILE)
       .write(profile_.countdown_cancel_all_ack, metrics::Type::PROFILE)
+      .write(profile_.refresh_listen_key, metrics::Type::PROFILE)
+      .write(profile_.refresh_listen_key_ack, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY);
 }
@@ -241,6 +252,7 @@ void OrderEntry::operator()(Trace<web::rest::Disconnected> const &event) {
     download_.reset();
   }
   next_heartbeat_ = {};
+  listen_key_refresh_ = {};
 }
 
 void OrderEntry::operator()(Trace<web::rest::Latency> const &event) {
@@ -330,6 +342,7 @@ void OrderEntry::operator()(Trace<protocol::json::ListenKeyAck> const &event) {
       .listen_key = listen_key_ack.listen_key,
   };
   create_trace_and_dispatch(handler_, trace_info, listen_key_update);
+  listen_key_refresh_ = trace_info.origin_create_time + LISTEN_KEY_REFRESH_FREQ;
 }
 
 // account
@@ -962,6 +975,37 @@ void OrderEntry::countdown_cancel_all_ack(Trace<web::rest::Response> const &even
   profile_.countdown_cancel_all_ack([&]() {
     auto &[trace_info, response] = event;
     auto [status, category, body] = response.result();
+    if (status != web::http::Status::OK) {
+      log::warn(R"(DEBUG status={}, category={}, body="{}")"sv, status, category, body);
+    }
+  });
+}
+
+// refresh-listen-key
+
+void OrderEntry::refresh_listen_key(TraceInfo const &trace_info) {
+  profile_.refresh_listen_key([&]() {
+    auto query = account_.create_query(trace_info);
+    auto request = web::rest::Request{
+        .method = web::http::Method::PUT,
+        .path = shared_.api.order_management.listen_key,
+        .query = query,
+        .accept = web::http::Accept::APPLICATION_JSON,
+        .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
+        .headers = {},
+        .body = {},
+        .quality_of_service = {},
+    };
+    auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { refresh_listen_key_ack(event); };
+    (*connection_)(request, callback, "refresh_listen_key"sv);
+  });
+}
+
+void OrderEntry::refresh_listen_key_ack(Trace<web::rest::Response> const &event) {
+  profile_.refresh_listen_key_ack([&]() {
+    auto &[trace_info, response] = event;
+    auto [status, category, body] = response.result();
+    log::warn("DEBUG {}"sv, body);
     if (status != web::http::Status::OK) {
       log::warn(R"(DEBUG status={}, category={}, body="{}")"sv, status, category, body);
     }

@@ -166,6 +166,11 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
   void countdown_cancel_all_ack(Trace<web::rest::Response> const &);
   // void operator()(Trace<protocol::json::CancelAllOrdersAck> const &, uint8_t user_id);
 
+  // refresh-listen-key
+
+  void refresh_listen_key(TraceInfo const &);
+  void refresh_listen_key_ack(Trace<web::rest::Response> const &);
+
   // helpers
 
   void check_request_queue(TraceInfo const &);
@@ -194,7 +199,8 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
         modify_order, modify_order_ack,                  //
         cancel_order, cancel_order_ack,                  //
         cancel_all_orders, cancel_all_orders_ack,        //
-        countdown_cancel_all, countdown_cancel_all_ack;
+        countdown_cancel_all, countdown_cancel_all_ack,  //
+        refresh_listen_key, refresh_listen_key_ack;
   } profile_;
   struct {
     utils::metrics::Latency ping;
@@ -209,6 +215,7 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
   //
   std::string encode_buffer_;
   std::chrono::nanoseconds next_heartbeat_ = {};
+  std::chrono::nanoseconds listen_key_refresh_ = {};
 };
 
 }  // namespace gateway

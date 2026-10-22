@@ -11,6 +11,10 @@
       "raw": "E",
       "name": "event_time",
       "type": "std/milliseconds"
+    },
+    {
+      "name": "listenKey",
+      "type": "std/string_view"
     }
   ]
 }
