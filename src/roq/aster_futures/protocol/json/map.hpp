@@ -4,7 +4,7 @@
 
 #include "roq/map.hpp"
 
-#include "roq/liquidity.hpp"
+#include "roq/margin_mode.hpp"
 #include "roq/order_status.hpp"
 #include "roq/order_type.hpp"
 #include "roq/position_effect.hpp"
@@ -12,11 +12,11 @@
 #include "roq/side.hpp"
 #include "roq/time_in_force.hpp"
 #include "roq/trading_status.hpp"
-#include "roq/update_type.hpp"
 
 #include "roq/aster_futures/protocol/json/contract_status.hpp"
 #include "roq/aster_futures/protocol/json/contract_type.hpp"
 #include "roq/aster_futures/protocol/json/futures_type.hpp"
+#include "roq/aster_futures/protocol/json/margin_type.hpp"
 #include "roq/aster_futures/protocol/json/order_status.hpp"
 #include "roq/aster_futures/protocol/json/order_type.hpp"
 #include "roq/aster_futures/protocol/json/position_side.hpp"
@@ -29,11 +29,19 @@ namespace roq {
 
 template <>
 template <>
-std::optional<SecurityType> Map<aster_futures::protocol::json::FuturesType>::helper() const;
+std::optional<TradingStatus> Map<aster_futures::protocol::json::ContractStatus>::helper() const;
 
 template <>
 template <>
 std::optional<SecurityType> Map<aster_futures::protocol::json::ContractType>::helper() const;
+
+template <>
+template <>
+std::optional<SecurityType> Map<aster_futures::protocol::json::FuturesType>::helper() const;
+
+template <>
+template <>
+std::optional<MarginMode> Map<aster_futures::protocol::json::MarginType>::helper() const;
 
 template <>
 template <>
@@ -55,10 +63,6 @@ template <>
 template <>
 std::optional<TimeInForce> Map<aster_futures::protocol::json::TimeInForce>::helper() const;
 
-template <>
-template <>
-std::optional<TradingStatus> Map<aster_futures::protocol::json::ContractStatus>::helper() const;
-
 // roq => aster_futures::protocol::json
 
 template <>
@@ -67,14 +71,13 @@ std::optional<aster_futures::protocol::json::OrderType> Map<OrderType>::helper()
 
 template <>
 template <>
+std::optional<aster_futures::protocol::json::PositionSide> Map<roq::PositionEffect, roq::Side>::helper() const;
+template <>
+template <>
 std::optional<aster_futures::protocol::json::Side> Map<Side>::helper() const;
 
 template <>
 template <>
 std::optional<aster_futures::protocol::json::TimeInForce> Map<TimeInForce>::helper() const;
-
-template <>
-template <>
-std::optional<aster_futures::protocol::json::PositionSide> Map<roq::PositionEffect, roq::Side>::helper() const;
 
 }  // namespace roq

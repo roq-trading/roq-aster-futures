@@ -387,21 +387,41 @@ void OrderEntry::get_account_ack(Trace<web::rest::Response> const &event) {
 void OrderEntry::operator()(Trace<protocol::json::AccountAck> const &event) {
   auto &[trace_info, account_ack] = event;
   log::info<4>("account_ack={}"sv, account_ack);
-  /*
-  log::warn(
-      R"(DEBUG account="{}", account_mode={}, asset_mode={}, hold_mode={}, stp_mode={})"sv,
-      account_.name,
-      account_ack.data.account_mode,
-      account_ack.data.asset_mode,
-      account_ack.data.hold_mode,
-      account_ack.data.stp_mode);
-  for (auto &item : account_ack.data.symbol_config_list) {
-    log::warn(R"(DEBUG account="{}", symbol="{}", leverage={}, margin_mode={})"sv, account_.name, item.symbol, item.leverage, item.margin_mode);
+  for (auto &item : account_ack.assets) {
+    auto funds_update = FundsUpdate{
+        .stream_id = stream_id_,
+        .account = account_.name,
+        .currency = item.asset,
+        .margin_mode = {},
+        .balance = item.wallet_balance,
+        .hold = NaN,
+        .borrowed = NaN,
+        .unrealized_pnl = NaN,
+        .external_account = {},
+        .update_type = UpdateType::SNAPSHOT,
+        .exchange_time_utc = item.update_time,
+        .sending_time_utc = {},
+    };
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, funds_update, true);
   }
-  for (auto &item : account_ack.data.coin_config_list) {
-    log::warn(R"(DEBUG account="{}", coin="{}", leverage={})"sv, account_.name, item.coin, item.leverage);
+  for (auto &item : account_ack.positions) {
+    auto long_quantity = std::max(0.0, item.position_amt);
+    auto short_quantity = std::max(0.0, -item.position_amt);
+    auto position_update = PositionUpdate{
+        .stream_id = stream_id_,
+        .account = account_.name,
+        .exchange = shared_.settings.exchange,
+        .symbol = item.symbol,
+        .margin_mode = MarginMode::CROSS,  // XXX FIXME TODO
+        .external_account = {},
+        .long_quantity = long_quantity,
+        .short_quantity = short_quantity,
+        .update_type = UpdateType::SNAPSHOT,
+        .exchange_time_utc = item.update_time,
+        .sending_time_utc = {},
+    };
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, position_update, true);
   }
-  */
 }
 
 // open-orders
@@ -1005,7 +1025,6 @@ void OrderEntry::refresh_listen_key_ack(Trace<web::rest::Response> const &event)
   profile_.refresh_listen_key_ack([&]() {
     auto &[trace_info, response] = event;
     auto [status, category, body] = response.result();
-    log::warn("DEBUG {}"sv, body);
     if (status != web::http::Status::OK) {
       log::warn(R"(DEBUG status={}, category={}, body="{}")"sv, status, category, body);
     }

@@ -88,6 +88,7 @@ bool Parser::dispatch(
       log::warn("DEBUG {}"sv, message);
       return dispatch_helper<AccountUpdate>(handler, message, buffer_stack, trace_info);
     case ORDER_TRADE_UPDATE:
+      log::warn("DEBUG {}"sv, message);
       return dispatch_helper<OrderTradeUpdate>(handler, message, buffer_stack, trace_info);
     case ACCOUNT_CONFIG_UPDATE:
       log::warn("DEBUG {}"sv, message);

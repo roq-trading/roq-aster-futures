@@ -271,14 +271,55 @@ void DropCopy::operator()(Trace<protocol::json::ForceOrder> const &) {
 
 void DropCopy::operator()(Trace<protocol::json::ListenKeyExpired> const &event) {
   auto &[trace_info, listen_key_expired] = event;
+  log::info<2>("listen_key_expired={}"sv, listen_key_expired);
+  log::warn("DEBUG listen_key_expired={}"sv, listen_key_expired);
 }
 
 void DropCopy::operator()(Trace<protocol::json::MarginCall> const &event) {
   auto &[trace_info, margin_call] = event;
+  log::info<2>("margin_call={}"sv, margin_call);
+  log::warn("DEBUG margin_call={}"sv, margin_call);
 }
 
 void DropCopy::operator()(Trace<protocol::json::AccountUpdate> const &event) {
   auto &[trace_info, account_update] = event;
+  log::info<2>("account_update={}"sv, account_update);
+  log::warn("DEBUG account_update={}"sv, account_update);
+  for (auto &item : account_update.data.balances) {
+    auto funds_update = FundsUpdate{
+        .stream_id = stream_id_,
+        .account = account_.name,
+        .currency = item.asset,
+        .margin_mode = {},
+        .balance = item.wallet_balance,
+        .hold = NaN,
+        .borrowed = NaN,
+        .unrealized_pnl = NaN,
+        .external_account = {},
+        .update_type = UpdateType::INCREMENTAL,
+        .exchange_time_utc = account_update.transaction_time,
+        .sending_time_utc = account_update.event_time,
+    };
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, funds_update, true);
+  }
+  for (auto &item : account_update.data.positions) {
+    auto long_quantity = std::max(0.0, item.position_amount);
+    auto short_quantity = std::max(0.0, -item.position_amount);
+    auto position_update = PositionUpdate{
+        .stream_id = stream_id_,
+        .account = account_.name,
+        .exchange = shared_.settings.exchange,
+        .symbol = item.symbol,
+        .margin_mode = map(item.margin_type),
+        .external_account = {},
+        .long_quantity = long_quantity,
+        .short_quantity = short_quantity,
+        .update_type = UpdateType::INCREMENTAL,
+        .exchange_time_utc = account_update.transaction_time,
+        .sending_time_utc = account_update.event_time,
+    };
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, position_update, true);
+  }
 }
 
 void DropCopy::operator()(Trace<protocol::json::OrderTradeUpdate> const &event) {
@@ -327,10 +368,49 @@ void DropCopy::operator()(Trace<protocol::json::OrderTradeUpdate> const &event) 
   };
   log::warn("DEBUG order_update={}"sv, order_update);
   create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
+  if (order.execution_type == protocol::json::ExecutionType::TRADE) {
+    auto external_trade_id = fmt::format("{}"sv, order.order_trade_time);  // XXX FIXME TODO something more useful for reconciliation
+    auto fill = Fill{
+        .external_trade_id = external_trade_id,
+        .quantity = order.last_filled_quantity,
+        .price = order.last_filled_price,
+        .liquidity = {},
+        .commission_amount = order.commission,
+        .commission_currency = order.commission_asset,
+        .base_amount = NaN,
+        .quote_amount = NaN,
+        .profit_loss_amount = NaN,
+    };
+    auto trade_update = TradeUpdate{
+        .stream_id = stream_id_,
+        .account = account_.name,
+        .order_id = {},
+        .exchange = shared_.settings.exchange,
+        .symbol = order.symbol,
+        .side = map(order.side),
+        .position_effect = map(order.position_side, order.side),
+        .margin_mode = {},
+        .quantity_type = {},
+        .create_time_utc = order.order_trade_time,
+        .update_time_utc = order.order_trade_time,
+        .external_account = {},
+        .external_order_id = external_order_id,
+        .client_order_id = order.client_order_id,
+        .fills = {&fill, 1},
+        .routing_id = {},
+        .update_type = UpdateType::INCREMENTAL,
+        .sending_time_utc = order_trade_update.event_time,
+        .user = {},
+        .strategy_id = {},
+    };
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, trade_update, true, SOURCE_NONE);
+  }
 }
 
 void DropCopy::operator()(Trace<protocol::json::AccountConfigUpdate> const &event) {
   auto &[trace_info, account_config_update] = event;
+  log::info<2>("account_config_update={}"sv, account_config_update);
+  log::warn("DEBUG account_config_update={}"sv, account_config_update);
 }
 
 // helpers

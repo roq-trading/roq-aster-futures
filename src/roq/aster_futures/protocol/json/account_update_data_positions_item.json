@@ -41,6 +41,11 @@
       "raw": "ps",
       "name": "position_side",
       "type": "roq/aster_futures/protocol/json/PositionSide"
+    },
+    {
+      "raw": "ma",
+      "name": "undoc_1",
+      "type": "std/string_view"
     }
   ]
 }

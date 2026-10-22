@@ -13,30 +13,44 @@ using Helper = detail::MapHelper<Args...>;
 
 // aster_futures::protocol::json => roq
 
-// aster_futures::protocol::json::FuturesType => roq::SecurityType
+// aster_futures::protocol::json::ContractStatus => roq::TradingStatus
 
 template <>
 template <>
-constexpr Helper<aster_futures::protocol::json::FuturesType>::operator std::optional<roq::SecurityType>() const {
+constexpr Helper<aster_futures::protocol::json::ContractStatus>::operator std::optional<roq::TradingStatus>() const {
   switch (std::get<0>(args_)) {
-    using enum aster_futures::protocol::json::FuturesType::type_t;
+    using enum aster_futures::protocol::json::ContractStatus::type_t;
     case UNDEFINED_INTERNAL:
-      return roq::SecurityType::UNDEFINED;
+      return roq::TradingStatus::UNDEFINED;
     case UNKNOWN_INTERNAL:
-      return roq::SecurityType::UNDEFINED;
-    case U_MARGINED:
-      return roq::SecurityType::SWAP;  // ???
+      return roq::TradingStatus::UNDEFINED;
+    case PENDING_TRADING:
+      return roq::TradingStatus::PRE_OPEN;
+    case TRADING:
+      return roq::TradingStatus::OPEN;
+    case PRE_SETTLE:
+      return roq::TradingStatus::PRE_CLOSE;
+    case SETTLING:
+      return roq::TradingStatus::CLOSE;
+    case CLOSE:
+      return roq::TradingStatus::CLOSE;
   }
   return {};
 }
 
 static_assert(
-    Helper{aster_futures::protocol::json::FuturesType{aster_futures::protocol::json::FuturesType::UNDEFINED_INTERNAL}} == roq::SecurityType::UNDEFINED);
-static_assert(Helper{aster_futures::protocol::json::FuturesType{aster_futures::protocol::json::FuturesType::U_MARGINED}} == roq::SecurityType::SWAP);
+    Helper{aster_futures::protocol::json::ContractStatus{aster_futures::protocol::json::ContractStatus::UNDEFINED_INTERNAL}} == roq::TradingStatus::UNDEFINED);
+static_assert(
+    Helper{aster_futures::protocol::json::ContractStatus{aster_futures::protocol::json::ContractStatus::PENDING_TRADING}} == roq::TradingStatus::PRE_OPEN);
+static_assert(Helper{aster_futures::protocol::json::ContractStatus{aster_futures::protocol::json::ContractStatus::TRADING}} == roq::TradingStatus::OPEN);
+static_assert(
+    Helper{aster_futures::protocol::json::ContractStatus{aster_futures::protocol::json::ContractStatus::PRE_SETTLE}} == roq::TradingStatus::PRE_CLOSE);
+static_assert(Helper{aster_futures::protocol::json::ContractStatus{aster_futures::protocol::json::ContractStatus::SETTLING}} == roq::TradingStatus::CLOSE);
+static_assert(Helper{aster_futures::protocol::json::ContractStatus{aster_futures::protocol::json::ContractStatus::CLOSE}} == roq::TradingStatus::CLOSE);
 
 template <>
 template <>
-std::optional<roq::SecurityType> Map<aster_futures::protocol::json::FuturesType>::helper() const {
+std::optional<roq::TradingStatus> Map<aster_futures::protocol::json::ContractStatus>::helper() const {
   return Helper{args_};
 }
 
@@ -64,6 +78,65 @@ static_assert(Helper{aster_futures::protocol::json::ContractType{aster_futures::
 template <>
 template <>
 std::optional<roq::SecurityType> Map<aster_futures::protocol::json::ContractType>::helper() const {
+  return Helper{args_};
+}
+
+// aster_futures::protocol::json::FuturesType => roq::SecurityType
+
+template <>
+template <>
+constexpr Helper<aster_futures::protocol::json::FuturesType>::operator std::optional<roq::SecurityType>() const {
+  switch (std::get<0>(args_)) {
+    using enum aster_futures::protocol::json::FuturesType::type_t;
+    case UNDEFINED_INTERNAL:
+      return roq::SecurityType::UNDEFINED;
+    case UNKNOWN_INTERNAL:
+      return roq::SecurityType::UNDEFINED;
+    case U_MARGINED:
+      return roq::SecurityType::SWAP;  // ???
+  }
+  return {};
+}
+
+static_assert(
+    Helper{aster_futures::protocol::json::FuturesType{aster_futures::protocol::json::FuturesType::UNDEFINED_INTERNAL}} == roq::SecurityType::UNDEFINED);
+static_assert(Helper{aster_futures::protocol::json::FuturesType{aster_futures::protocol::json::FuturesType::U_MARGINED}} == roq::SecurityType::SWAP);
+
+template <>
+template <>
+std::optional<roq::SecurityType> Map<aster_futures::protocol::json::FuturesType>::helper() const {
+  return Helper{args_};
+}
+
+// aster_futures::protocol::json::MarginType => roq::MarginMode
+
+template <>
+template <>
+constexpr Helper<aster_futures::protocol::json::MarginType>::operator std::optional<roq::MarginMode>() const {
+  switch (std::get<0>(args_)) {
+    using enum aster_futures::protocol::json::MarginType::type_t;
+    case UNDEFINED_INTERNAL:
+      return roq::MarginMode::UNDEFINED;
+    case UNKNOWN_INTERNAL:
+      return roq::MarginMode::UNDEFINED;
+    case CROSSED:
+      return roq::MarginMode::CROSS;
+    case ISOLATED:
+      return roq::MarginMode::ISOLATED;
+    case CROSS:
+      return roq::MarginMode::CROSS;
+  }
+  return {};
+}
+
+static_assert(Helper{aster_futures::protocol::json::MarginType{aster_futures::protocol::json::MarginType::UNDEFINED_INTERNAL}} == roq::MarginMode::UNDEFINED);
+static_assert(Helper{aster_futures::protocol::json::MarginType{aster_futures::protocol::json::MarginType::CROSSED}} == roq::MarginMode::CROSS);
+static_assert(Helper{aster_futures::protocol::json::MarginType{aster_futures::protocol::json::MarginType::ISOLATED}} == roq::MarginMode::ISOLATED);
+static_assert(Helper{aster_futures::protocol::json::MarginType{aster_futures::protocol::json::MarginType::CROSS}} == roq::MarginMode::CROSS);
+
+template <>
+template <>
+std::optional<roq::MarginMode> Map<aster_futures::protocol::json::MarginType>::helper() const {
   return Helper{args_};
 }
 
@@ -296,47 +369,6 @@ std::optional<roq::TimeInForce> Map<aster_futures::protocol::json::TimeInForce>:
   return Helper{args_};
 }
 
-// aster_futures::protocol::json::ContractStatus => roq::TradingStatus
-
-template <>
-template <>
-constexpr Helper<aster_futures::protocol::json::ContractStatus>::operator std::optional<roq::TradingStatus>() const {
-  switch (std::get<0>(args_)) {
-    using enum aster_futures::protocol::json::ContractStatus::type_t;
-    case UNDEFINED_INTERNAL:
-      return roq::TradingStatus::UNDEFINED;
-    case UNKNOWN_INTERNAL:
-      return roq::TradingStatus::UNDEFINED;
-    case PENDING_TRADING:
-      return roq::TradingStatus::PRE_OPEN;
-    case TRADING:
-      return roq::TradingStatus::OPEN;
-    case PRE_SETTLE:
-      return roq::TradingStatus::PRE_CLOSE;
-    case SETTLING:
-      return roq::TradingStatus::CLOSE;
-    case CLOSE:
-      return roq::TradingStatus::CLOSE;
-  }
-  return {};
-}
-
-static_assert(
-    Helper{aster_futures::protocol::json::ContractStatus{aster_futures::protocol::json::ContractStatus::UNDEFINED_INTERNAL}} == roq::TradingStatus::UNDEFINED);
-static_assert(
-    Helper{aster_futures::protocol::json::ContractStatus{aster_futures::protocol::json::ContractStatus::PENDING_TRADING}} == roq::TradingStatus::PRE_OPEN);
-static_assert(Helper{aster_futures::protocol::json::ContractStatus{aster_futures::protocol::json::ContractStatus::TRADING}} == roq::TradingStatus::OPEN);
-static_assert(
-    Helper{aster_futures::protocol::json::ContractStatus{aster_futures::protocol::json::ContractStatus::PRE_SETTLE}} == roq::TradingStatus::PRE_CLOSE);
-static_assert(Helper{aster_futures::protocol::json::ContractStatus{aster_futures::protocol::json::ContractStatus::SETTLING}} == roq::TradingStatus::CLOSE);
-static_assert(Helper{aster_futures::protocol::json::ContractStatus{aster_futures::protocol::json::ContractStatus::CLOSE}} == roq::TradingStatus::CLOSE);
-
-template <>
-template <>
-std::optional<roq::TradingStatus> Map<aster_futures::protocol::json::ContractStatus>::helper() const {
-  return Helper{args_};
-}
-
 // roq => aster_futures::protocol::json
 
 // roq::OrderType => aster_futures::protocol::json::OrderType
@@ -363,6 +395,66 @@ static_assert(Helper{roq::OrderType::LIMIT} == aster_futures::protocol::json::Or
 template <>
 template <>
 std::optional<aster_futures::protocol::json::OrderType> Map<roq::OrderType>::helper() const {
+  return Helper{args_};
+}
+
+// {roq::PositionEffect, roq::Side} => aster_futures::protocol::json::PositionSide
+
+template <>
+template <>
+constexpr Helper<roq::PositionEffect, roq::Side>::operator std::optional<aster_futures::protocol::json::PositionSide>() const {
+  switch (std::get<0>(args_)) {
+    using enum roq::PositionEffect;
+    case UNDEFINED:
+      return aster_futures::protocol::json::PositionSide::BOTH;
+    case OPEN:
+      switch (std::get<1>(args_)) {
+        using enum roq::Side;
+        case UNDEFINED:
+          return aster_futures::protocol::json::PositionSide::BOTH;
+        case BUY:
+          return aster_futures::protocol::json::PositionSide::LONG;
+        case SELL:
+          return aster_futures::protocol::json::PositionSide::SHORT;
+      }
+      break;
+    case CLOSE:
+      switch (std::get<1>(args_)) {
+        using enum roq::Side;
+        case UNDEFINED:
+          return aster_futures::protocol::json::PositionSide::BOTH;
+        case BUY:
+          return aster_futures::protocol::json::PositionSide::SHORT;
+        case SELL:
+          return aster_futures::protocol::json::PositionSide::LONG;
+      }
+      break;
+  }
+  return {};
+}
+
+static_assert(
+    Helper{roq::PositionEffect{roq::PositionEffect::UNDEFINED}, roq::Side{roq::Side::UNDEFINED}} ==
+    aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::BOTH});
+static_assert(
+    Helper{roq::PositionEffect{roq::PositionEffect::OPEN}, roq::Side{roq::Side::UNDEFINED}} ==
+    aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::BOTH});
+static_assert(
+    Helper{roq::PositionEffect{roq::PositionEffect::OPEN}, roq::Side{roq::Side::BUY}} ==
+    aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::LONG});
+static_assert(
+    Helper{roq::PositionEffect{roq::PositionEffect::OPEN}, roq::Side{roq::Side::SELL}} ==
+    aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::SHORT});
+static_assert(
+    Helper{roq::PositionEffect{roq::PositionEffect::CLOSE}, roq::Side{roq::Side::BUY}} ==
+    aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::SHORT});
+static_assert(
+    Helper{roq::PositionEffect{roq::PositionEffect::CLOSE}, roq::Side{roq::Side::SELL}} ==
+    aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::LONG});
+
+template <>
+template <>
+std::optional<aster_futures::protocol::json::PositionSide> Map<roq::PositionEffect, roq::Side>::helper() const {
   return Helper{args_};
 }
 
@@ -393,7 +485,7 @@ std::optional<aster_futures::protocol::json::Side> Map<roq::Side>::helper() cons
   return Helper{args_};
 }
 
-// roq::TimeInForce => aster_futures::protocol::json::Force
+// roq::TimeInForce => aster_futures::protocol::json::TimeInForce
 
 template <>
 template <>
@@ -456,66 +548,6 @@ static_assert(Helper{roq::TimeInForce::GFM} == aster_futures::protocol::json::Ti
 template <>
 template <>
 std::optional<aster_futures::protocol::json::TimeInForce> Map<roq::TimeInForce>::helper() const {
-  return Helper{args_};
-}
-
-// {roq::PositionEffect, roq::Side} => aster_futures::protocol::json::PositionSide
-
-template <>
-template <>
-constexpr Helper<roq::PositionEffect, roq::Side>::operator std::optional<aster_futures::protocol::json::PositionSide>() const {
-  switch (std::get<0>(args_)) {
-    using enum roq::PositionEffect;
-    case UNDEFINED:
-      return aster_futures::protocol::json::PositionSide::BOTH;
-    case OPEN:
-      switch (std::get<1>(args_)) {
-        using enum roq::Side;
-        case UNDEFINED:
-          return aster_futures::protocol::json::PositionSide::BOTH;
-        case BUY:
-          return aster_futures::protocol::json::PositionSide::LONG;
-        case SELL:
-          return aster_futures::protocol::json::PositionSide::SHORT;
-      }
-      break;
-    case CLOSE:
-      switch (std::get<1>(args_)) {
-        using enum roq::Side;
-        case UNDEFINED:
-          return aster_futures::protocol::json::PositionSide::BOTH;
-        case BUY:
-          return aster_futures::protocol::json::PositionSide::SHORT;
-        case SELL:
-          return aster_futures::protocol::json::PositionSide::LONG;
-      }
-      break;
-  }
-  return {};
-}
-
-static_assert(
-    Helper{roq::PositionEffect{roq::PositionEffect::UNDEFINED}, roq::Side{roq::Side::UNDEFINED}} ==
-    aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::BOTH});
-static_assert(
-    Helper{roq::PositionEffect{roq::PositionEffect::OPEN}, roq::Side{roq::Side::UNDEFINED}} ==
-    aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::BOTH});
-static_assert(
-    Helper{roq::PositionEffect{roq::PositionEffect::OPEN}, roq::Side{roq::Side::BUY}} ==
-    aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::LONG});
-static_assert(
-    Helper{roq::PositionEffect{roq::PositionEffect::OPEN}, roq::Side{roq::Side::SELL}} ==
-    aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::SHORT});
-static_assert(
-    Helper{roq::PositionEffect{roq::PositionEffect::CLOSE}, roq::Side{roq::Side::BUY}} ==
-    aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::SHORT});
-static_assert(
-    Helper{roq::PositionEffect{roq::PositionEffect::CLOSE}, roq::Side{roq::Side::SELL}} ==
-    aster_futures::protocol::json::PositionSide{aster_futures::protocol::json::PositionSide::LONG});
-
-template <>
-template <>
-std::optional<aster_futures::protocol::json::PositionSide> Map<roq::PositionEffect, roq::Side>::helper() const {
   return Helper{args_};
 }
 

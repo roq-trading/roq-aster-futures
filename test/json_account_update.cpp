@@ -11,7 +11,7 @@ using namespace std::literals;
 
 using value_type = protocol::json::AccountUpdate;
 
-TEST_CASE("simple", "[json_account_update]") {
+TEST_CASE("docs", "[json_account_update]") {
   auto message = R"({)"
                  R"("e": "ACCOUNT_UPDATE",)"
                  R"("E": 1564745798939,)"
@@ -59,6 +59,38 @@ TEST_CASE("simple", "[json_account_update]") {
                  R"("ps":"SHORT")"
                  R"(})"
                  R"(])"
+                 R"(})"
+                 R"(})";
+  auto helper = [](value_type const &obj) { CHECK(obj.event_type == protocol::json::EventType::ACCOUNT_UPDATE); };
+  ParserTester<value_type>::dispatch(helper, message, 8192, 2);
+}
+
+TEST_CASE("fill", "[json_account_update]") {
+  auto message = R"({)"
+                 R"("e":"ACCOUNT_UPDATE",)"
+                 R"("T":1792671901350,)"
+                 R"("E":1792671901389,)"
+                 R"("a":{)"
+                 R"("B":[{)"
+                 R"("a":"USDT",)"
+                 R"("wb":"-0.03271312",)"
+                 R"("cw":"-0.03271312",)"
+                 R"("bc":"0")"
+                 R"(})"
+                 R"(],)"
+                 R"("P":[{)"
+                 R"("s":"BTCUSDT",)"
+                 R"("pa":"0.001",)"
+                 R"("ep":"81782.80000000",)"
+                 R"("cr":"0",)"
+                 R"("up":"0.02600000",)"
+                 R"("mt":"cross",)"
+                 R"("iw":"0",)"
+                 R"("ps":"BOTH",)"
+                 R"("ma":"USDT")"
+                 R"(})"
+                 R"(],)"
+                 R"("m":"ORDER")"
                  R"(})"
                  R"(})";
   auto helper = [](value_type const &obj) { CHECK(obj.event_type == protocol::json::EventType::ACCOUNT_UPDATE); };

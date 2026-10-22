@@ -16,8 +16,7 @@ using namespace Catch::literals;
 
 using value_type = protocol::json::PlaceOrderAck;
 
-// note! truncated
-TEST_CASE("simple", "[json_place_order_ack]") {
+TEST_CASE("limit", "[json_place_order_ack]") {
   auto message = R"({)"
                  R"("orderId":33748610399,)"
                  R"("symbol":"BTCUSDT",)"
@@ -47,6 +46,43 @@ TEST_CASE("simple", "[json_place_order_ack]") {
                  R"(})"sv;
   auto helper = [&](value_type &obj) {
     CHECK(obj.order_id == 33748610399);
+    CHECK(obj.symbol == "BTCUSDT"sv);
+  };
+  core::json::BufferStack buffers{8192, 1};
+  value_type obj{message, buffers};
+  helper(obj);
+}
+
+TEST_CASE("market", "[json_place_order_ack]") {
+  auto message = R"({)"
+                 R"("orderId":33770225814,)"
+                 R"("symbol":"BTCUSDT",)"
+                 R"("status":"NEW",)"
+                 R"("clientOrderId":"7gACEHrvq4QAAQAAAAAA",)"
+                 R"("price":"0",)"
+                 R"("avgPrice":"0.0000",)"
+                 R"("origQty":"0.001",)"
+                 R"("executedQty":"0",)"
+                 R"("cumQty":"0",)"
+                 R"("cumQuote":"0",)"
+                 R"("timeInForce":"GTC",)"
+                 R"("type":"MARKET",)"
+                 R"("reduceOnly":false,)"
+                 R"("closePosition":false,)"
+                 R"("side":"BUY",)"
+                 R"("positionSide":"BOTH",)"
+                 R"("stopPrice":"0",)"
+                 R"("workingType":"CONTRACT_PRICE",)"
+                 R"("priceProtect":false,)"
+                 R"("origType":"MARKET",)"
+                 R"("updateTime":1792671901350,)"
+                 R"("newChainData":{)"
+                 R"("hash":"0xbdfdbf3d40d88a6e99b8134d26c5898c2ea08935f2692f366c9ceca956fa3831")"
+                 R"(},)"
+                 R"("stpMode":"EXPIRE_MAKER")"
+                 R"(})"sv;
+  auto helper = [&](value_type &obj) {
+    CHECK(obj.order_id == 33770225814);
     CHECK(obj.symbol == "BTCUSDT"sv);
   };
   core::json::BufferStack buffers{8192, 1};
