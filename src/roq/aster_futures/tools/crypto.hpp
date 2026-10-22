@@ -33,6 +33,8 @@ struct Crypto final {
   utils::eth::Account account_;
   Digest digest_;
   Hash hash_;
+
+  std::chrono::microseconds nonce_ = {};
 };
 
 }  // namespace tools

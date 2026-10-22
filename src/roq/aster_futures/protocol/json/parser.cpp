@@ -80,14 +80,18 @@ bool Parser::dispatch(
       return dispatch_helper<ForceOrder>(handler, message, buffer_stack, trace_info);
     // order management
     case LISTEN_KEY_EXPIRED:
+      log::warn("DEBUG {}"sv, message);
       return dispatch_helper<ListenKeyExpired>(handler, message, buffer_stack, trace_info);
     case MARGIN_CALL:
+      log::warn("DEBUG {}"sv, message);
       return dispatch_helper<MarginCall>(handler, message, buffer_stack, trace_info);
     case ACCOUNT_UPDATE:
+      log::warn("DEBUG {}"sv, message);
       return dispatch_helper<AccountUpdate>(handler, message, buffer_stack, trace_info);
     case ORDER_TRADE_UPDATE:
       return dispatch_helper<OrderTradeUpdate>(handler, message, buffer_stack, trace_info);
     case ACCOUNT_CONFIG_UPDATE:
+      log::warn("DEBUG {}"sv, message);
       return dispatch_helper<AccountConfigUpdate>(handler, message, buffer_stack, trace_info);
   }
   if (allow_unknown_event_types) {

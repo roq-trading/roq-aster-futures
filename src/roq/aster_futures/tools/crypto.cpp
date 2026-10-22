@@ -32,11 +32,19 @@ Crypto::Crypto(std::string_view const &key, std::string_view const &secret) : ke
 }
 
 std::string Crypto::sign_message(std::chrono::microseconds now_utc, std::string_view const &message) {
+  auto nonce = [&]() {
+    if (nonce_ < now_utc) {
+      nonce_ = now_utc;
+    } else {
+      ++nonce_;
+    }
+    return nonce_;
+  }();
   std::string message_for_signing;
   if (!std::empty(message)) {
     fmt::format_to(std::back_inserter(message_for_signing), "{}&"sv, message);
   }
-  fmt::format_to(std::back_inserter(message_for_signing), "nonce={}&signer={}"sv, now_utc.count(), account_.get_address());
+  fmt::format_to(std::back_inserter(message_for_signing), "nonce={}&signer={}"sv, nonce.count(), account_.get_address());
   std::array<utils::eth::Field, 1> data{{
       {
           .name = "msg"sv,
