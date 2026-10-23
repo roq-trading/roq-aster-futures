@@ -29,9 +29,10 @@ auto const SUPPORTS = Mask{
     SupportType::POSITION,
 };
 
-auto const PING = "ping"sv;
-
 size_t const MAX_DECODE_BUFFER_DEPTH = 2;
+
+// auto const LISTEN_KEY_REFRESH_FREQ = 15min;
+auto const LISTEN_KEY_REFRESH_FREQ = 120min;
 }  // namespace
 
 // === HELPERS ===
@@ -81,8 +82,8 @@ struct create_metrics final : public utils::metrics::Factory {
 
 DropCopy::DropCopy(
     Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request, std::string_view const &listen_key)
-    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account)},
-      connection_{create_connection(*this, shared.settings, context, shared, listen_key)},
+    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account)}, listen_key_{listen_key},
+      connection_{create_connection(*this, shared.settings, context, shared, listen_key_)},
       decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
@@ -95,6 +96,13 @@ DropCopy::DropCopy(
           .heartbeat = create_metrics(shared.settings, name_, "heartbeat"sv),
       },
       account_{account}, shared_{shared}, request_{request}, download_{shared.settings.rest.request_timeout, [this](auto &event) { return download(event); }} {
+}
+
+void DropCopy::operator()(Trace<ListenKeyUpdate> const &event) {
+  auto &[trace_info, listen_key_update] = event;
+  if (listen_key_update.listen_key != listen_key_) {
+    close_and_restart();
+  }
 }
 
 // server::Stream
@@ -116,6 +124,7 @@ void DropCopy::operator()(Trace<Timer> const &event) {
   if ((*connection_).refresh(timer.now)) {
     if (ready()) {
       check_response(trace_info);
+      check_listen_key(trace_info);
     }
   }
 }
@@ -163,11 +172,16 @@ void DropCopy::operator()(Trace<web::socket::Disconnected> const &event) {
   ++counter_.disconnect;
   create_trace_and_dispatch_2(trace_info, ConnectionStatus::DISCONNECTED);
   download_.reset();
+  if (stop_) {
+    auto remove = Remove{
+        .account = account_.name,
+    };
+    create_trace_and_dispatch(handler_, trace_info, remove);
+  }
 }
 
 void DropCopy::operator()(Trace<web::socket::Ready> const &event) {
   auto &[trace_info, ready] = event;
-  log::warn("DEBUG READY"sv);
   download_.begin(trace_info);
 }
 
@@ -200,7 +214,6 @@ void DropCopy::operator()(Trace<web::socket::Binary> const &) {
 
 int32_t DropCopy::download(Trace<State> const &event) {
   auto &[trace_info, state] = event;
-  log::warn("DEBUG {}"sv, state);
   switch (state) {
     using enum State;
     case UNDEFINED:
@@ -215,8 +228,13 @@ int32_t DropCopy::download(Trace<State> const &event) {
       request_.open_orders.request(trace_info);
       return 1;
     case USER_TRADES:
-      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "user-trades"sv);
-      return 1;
+      if (shared_.settings.rest.download_fills_begin.count() > 0 && !std::empty(shared_.settings.download.symbols)) {
+        create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "user-trades"sv);
+        request_.user_trades.request(trace_info);
+        return 1;
+      } else {
+        return 0;
+      }
     case DONE:
       create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
       return 0;
@@ -273,6 +291,7 @@ void DropCopy::operator()(Trace<protocol::json::ListenKeyExpired> const &event) 
   auto &[trace_info, listen_key_expired] = event;
   log::info<2>("listen_key_expired={}"sv, listen_key_expired);
   log::warn("DEBUG listen_key_expired={}"sv, listen_key_expired);
+  close_and_restart();
 }
 
 void DropCopy::operator()(Trace<protocol::json::MarginCall> const &event) {
@@ -415,6 +434,12 @@ void DropCopy::operator()(Trace<protocol::json::AccountConfigUpdate> const &even
 
 // helpers
 
+void DropCopy::close_and_restart() {
+  stop_ = true;  // note!
+  log::warn("Closing connection..."sv);
+  (*connection_).close();
+}
+
 void DropCopy::check_response(TraceInfo const &trace_info) {
   switch (download_.state()) {
     using enum State;
@@ -438,6 +463,17 @@ void DropCopy::check_response(TraceInfo const &trace_info) {
     case DONE:
       break;
   }
+}
+
+void DropCopy::check_listen_key(TraceInfo const &trace_info) {
+  if (next_listen_key_refresh_.count()) {
+    if (trace_info.origin_create_time < next_listen_key_refresh_) {
+      return;
+    }
+    log::warn("DEBUG requesting listen-key..."sv);
+    request_.listen_key.request(trace_info);
+  }
+  next_listen_key_refresh_ = trace_info.origin_create_time + LISTEN_KEY_REFRESH_FREQ;
 }
 
 void DropCopy::parse(TraceInfo const &trace_info, std::string_view const &message) {

@@ -12,8 +12,6 @@
 
 #include "roq/web/rest/client.hpp"
 
-#include "roq/core/download_2.hpp"
-
 #include "roq/core/json/buffer_stack.hpp"
 
 #include "roq/server.hpp"
@@ -92,20 +90,10 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
   void operator()(Trace<web::rest::Disconnected> const &) override;
   void operator()(Trace<web::rest::Latency> const &) override;
 
-  // core::Download
-
-  enum class State {
-    UNDEFINED = 0,
-    LISTEN_KEY,
-    DONE,
-  };
-
-  int32_t download(Trace<State> const &);
-
   // listen-key
 
   void get_listen_key(TraceInfo const &);
-  void get_listen_key_ack(Trace<web::rest::Response> const &, uint32_t sequence);
+  void get_listen_key_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<protocol::json::ListenKeyAck> const &);
 
   // account
@@ -166,14 +154,11 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
   void countdown_cancel_all_ack(Trace<web::rest::Response> const &);
   // void operator()(Trace<protocol::json::CancelAllOrdersAck> const &, uint8_t user_id);
 
-  // refresh-listen-key
-
-  void refresh_listen_key(TraceInfo const &);
-  void refresh_listen_key_ack(Trace<web::rest::Response> const &);
-
   // helpers
 
   void check_request_queue(TraceInfo const &);
+
+  void check_countdown_cancel_all(TraceInfo const &);
 
   void process_response(Trace<web::rest::Response> const &, auto error_handler, auto success_handler);
 
@@ -199,8 +184,7 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
         modify_order, modify_order_ack,                  //
         cancel_order, cancel_order_ack,                  //
         cancel_all_orders, cancel_all_orders_ack,        //
-        countdown_cancel_all, countdown_cancel_all_ack,  //
-        refresh_listen_key, refresh_listen_key_ack;
+        countdown_cancel_all, countdown_cancel_all_ack;
   } profile_;
   struct {
     utils::metrics::Latency ping;
@@ -211,11 +195,11 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
   Request &request_;
   // state
   ConnectionStatus connection_status_ = {};
-  core::Download2<State> download_;
   //
   std::string encode_buffer_;
+  //
   std::chrono::nanoseconds next_heartbeat_ = {};
-  std::chrono::nanoseconds listen_key_refresh_ = {};
+  std::chrono::nanoseconds xxx_ = {};
 };
 
 }  // namespace gateway

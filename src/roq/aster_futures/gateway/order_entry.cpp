@@ -33,8 +33,6 @@ auto const SUPPORTS = Mask{
 };
 
 size_t const MAX_DECODE_BUFFER_DEPTH = 2;
-
-auto const LISTEN_KEY_REFRESH_FREQ = 15min;
 }  // namespace
 
 // === HELPERS ===
@@ -106,16 +104,17 @@ OrderEntry::OrderEntry(Handler &handler, io::Context &context, uint16_t stream_i
           .cancel_all_orders_ack = create_metrics(shared.settings, name_, "cancel_all_orders_ack"sv),
           .countdown_cancel_all = create_metrics(shared.settings, name_, "countdown_cancel_all"sv),
           .countdown_cancel_all_ack = create_metrics(shared.settings, name_, "countdown_cancel_all_ack"sv),
-          .refresh_listen_key = create_metrics(shared.settings, name_, "refresh_listen_key"sv),
-          .refresh_listen_key_ack = create_metrics(shared.settings, name_, "refresh_listen_key_ack"sv),
       },
       latency_{
           .ping = create_metrics(shared.settings, name_, "ping"sv),
       },
-      account_{account}, shared_{shared}, request_{request}, download_{shared.settings.rest.request_timeout, [this](auto &event) { return download(event); }} {
+      account_{account}, shared_{shared}, request_{request} {
 }
 
-void OrderEntry::force_listen_key_refresh(TraceInfo const &) {
+void OrderEntry::force_listen_key_refresh(TraceInfo const &trace_info) {
+  log::info("Requesting listen-key refresh..."sv);
+  log::warn("HERE"sv);
+  request_.account.request(trace_info);
 }
 
 // server::Stream
@@ -128,23 +127,12 @@ void OrderEntry::operator()(Trace<Stop> const &) {
   (*connection_).stop();
 }
 
-// XXX FIXME TODO ping listen-key (PUT, response={})
 void OrderEntry::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
   if ((*connection_).refresh(timer.now)) {
     if (ready()) {
-      //
       check_request_queue(trace_info);
-      //
-      if (shared_.settings.rest.cancel_on_disconnect && next_heartbeat_ < timer.now) {
-        next_heartbeat_ = timer.now + (shared_.settings.rest.ping_freq / 3);
-        countdown_cancel_all(trace_info);
-      }
-      //
-      if (listen_key_refresh_.count() && listen_key_refresh_ < trace_info.origin_create_time) {
-        refresh_listen_key(trace_info);
-        listen_key_refresh_ = trace_info.origin_create_time + LISTEN_KEY_REFRESH_FREQ;
-      }
+      check_countdown_cancel_all(trace_info);
     }
   }
 }
@@ -172,8 +160,6 @@ void OrderEntry::operator()(metrics::Writer &writer) const {
       .write(profile_.cancel_all_orders_ack, metrics::Type::PROFILE)
       .write(profile_.countdown_cancel_all, metrics::Type::PROFILE)
       .write(profile_.countdown_cancel_all_ack, metrics::Type::PROFILE)
-      .write(profile_.refresh_listen_key, metrics::Type::PROFILE)
-      .write(profile_.refresh_listen_key_ack, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY);
 }
@@ -237,22 +223,14 @@ uint16_t OrderEntry::operator()(Event<CancelAllOrders> const &event, std::string
 
 void OrderEntry::operator()(Trace<web::rest::Connected> const &event) {
   auto &[trace_info, connected] = event;
-  if (download_.downloading()) {
-    download_.bump(trace_info);
-  } else {
-    download_.begin(trace_info);
-  }
+  create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
 }
 
 void OrderEntry::operator()(Trace<web::rest::Disconnected> const &event) {
   auto &[trace_info, disconnected] = event;
   ++counter_.disconnect;
   create_trace_and_dispatch_2(trace_info, ConnectionStatus::DISCONNECTED);
-  if (!download_.downloading()) {
-    download_.reset();
-  }
   next_heartbeat_ = {};
-  listen_key_refresh_ = {};
 }
 
 void OrderEntry::operator()(Trace<web::rest::Latency> const &event) {
@@ -264,27 +242,6 @@ void OrderEntry::operator()(Trace<web::rest::Latency> const &event) {
   };
   create_trace_and_dispatch(shared_.dispatcher, trace_info, external_latency);
   latency_.ping.update(latency.sample);
-}
-
-// core::Download
-
-int32_t OrderEntry::download(Trace<State> const &event) {
-  auto &[trace_info, state] = event;
-  switch (state) {
-    using enum State;
-    case UNDEFINED:
-      assert(false);
-      break;
-    case LISTEN_KEY:
-      create_trace_and_dispatch_2(trace_info, ConnectionStatus::DOWNLOADING, "listen-key"sv);
-      get_listen_key(trace_info);
-      return 1;
-    case DONE:
-      create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
-      return 0;
-  }
-  assert(false);
-  return 0;
 }
 
 // listen-key
@@ -305,29 +262,21 @@ void OrderEntry::get_listen_key(TraceInfo const &trace_info) {
         .quality_of_service = {},
     };
     log::warn("DEBUG request={}"sv, request);
-    auto sequence = download_.sequence();
-    auto callback = [this, sequence](auto &event, [[maybe_unused]] auto &request_id) { get_listen_key_ack(event, sequence); };
+    auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { get_listen_key_ack(event); };
     (*connection_)(request, callback, "listen_key"sv);
   });
 }
 
-void OrderEntry::get_listen_key_ack(Trace<web::rest::Response> const &event, uint32_t sequence) {
-  auto const state = State::LISTEN_KEY;
+void OrderEntry::get_listen_key_ack(Trace<web::rest::Response> const &event) {
   profile_.listen_key_ack([&]() {
     auto &[trace_info, response] = event;
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
-      download_.retry(state);
     };
     auto handle_success = [&](auto &body) {
       log::warn("DEBUG body={}"sv, body);
-      if (download_.skip(sequence, state)) {
-        log::info("Download state={} has already been processed"sv, state);
-      } else {
-        protocol::json::ListenKeyAck listen_key_ack{body, decode_buffer_};
-        create_trace_and_dispatch_2(trace_info, listen_key_ack);
-        download_.check(trace_info, state);
-      }
+      protocol::json::ListenKeyAck listen_key_ack{body, decode_buffer_};
+      create_trace_and_dispatch_2(trace_info, listen_key_ack);
     };
     process_response(event, handle_error, handle_success);
     request_.listen_key.commit(trace_info);
@@ -342,7 +291,6 @@ void OrderEntry::operator()(Trace<protocol::json::ListenKeyAck> const &event) {
       .listen_key = listen_key_ack.listen_key,
   };
   create_trace_and_dispatch(handler_, trace_info, listen_key_update);
-  listen_key_refresh_ = trace_info.origin_create_time + LISTEN_KEY_REFRESH_FREQ;
 }
 
 // account
@@ -513,8 +461,8 @@ void OrderEntry::operator()(Trace<protocol::json::OpenOrdersAck> const &event) {
 // user-trades
 
 void OrderEntry::get_user_trades(TraceInfo const &trace_info) {
-  assert(shared_.settings.rest.download_fills_begin.count() > 0);
   profile_.user_trades([&]() {
+    assert(shared_.settings.rest.download_fills_begin.count() > 0);
     auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(trace_info.origin_create_time_utc - shared_.settings.rest.download_fills_begin);
     auto helper = [&](auto &symbol) {
       auto query = protocol::json::Encoder::user_trades(encode_buffer_, start_time, symbol);
@@ -1001,49 +949,32 @@ void OrderEntry::countdown_cancel_all_ack(Trace<web::rest::Response> const &even
   });
 }
 
-// refresh-listen-key
-
-void OrderEntry::refresh_listen_key(TraceInfo const &trace_info) {
-  profile_.refresh_listen_key([&]() {
-    auto query = account_.create_query(trace_info);
-    auto request = web::rest::Request{
-        .method = web::http::Method::PUT,
-        .path = shared_.api.order_management.listen_key,
-        .query = query,
-        .accept = web::http::Accept::APPLICATION_JSON,
-        .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
-        .headers = {},
-        .body = {},
-        .quality_of_service = {},
-    };
-    auto callback = [this](auto &event, [[maybe_unused]] auto &request_id) { refresh_listen_key_ack(event); };
-    (*connection_)(request, callback, "refresh_listen_key"sv);
-  });
-}
-
-void OrderEntry::refresh_listen_key_ack(Trace<web::rest::Response> const &event) {
-  profile_.refresh_listen_key_ack([&]() {
-    auto &[trace_info, response] = event;
-    auto [status, category, body] = response.result();
-    if (status != web::http::Status::OK) {
-      log::warn(R"(DEBUG status={}, category={}, body="{}")"sv, status, category, body);
-    }
-  });
-}
-
 // helpers
 
 void OrderEntry::check_request_queue(TraceInfo const &trace_info) {
-  request_.listen_key.check_pending(trace_info, [this](auto &trace_info) { get_listen_key(trace_info); });
-  request_.account.check_pending(trace_info, [this](auto &trace_info) { get_account(trace_info); });
-  request_.open_orders.check_pending(trace_info, [this](auto &trace_info) { get_open_orders(trace_info); });
-  request_.user_trades.check_pending(trace_info, [this](auto &trace_info) {
-    if (shared_.settings.rest.download_fills_begin.count()) {
-      get_user_trades(trace_info);
-    } else {
-    }
-    request_.user_trades.commit(trace_info);
+  request_.listen_key.check_pending(trace_info, [this](auto &trace_info) {
+    log::warn("Requesting listen-key..."sv);
+    get_listen_key(trace_info);
   });
+  request_.account.check_pending(trace_info, [this](auto &trace_info) {
+    log::warn("Requesting account..."sv);
+    get_account(trace_info);
+  });
+  request_.open_orders.check_pending(trace_info, [this](auto &trace_info) {
+    log::warn("Requesting open-orders..."sv);
+    get_open_orders(trace_info);
+  });
+  request_.user_trades.check_pending(trace_info, [this](auto &trace_info) {
+    log::warn("Requesting user-trades..."sv);
+    get_user_trades(trace_info);
+  });
+}
+
+void OrderEntry::check_countdown_cancel_all(TraceInfo const &trace_info) {
+  if (shared_.settings.rest.cancel_on_disconnect && next_heartbeat_ < trace_info.origin_create_time) {
+    next_heartbeat_ = trace_info.origin_create_time + (shared_.settings.rest.ping_freq / 3);
+    countdown_cancel_all(trace_info);
+  }
 }
 
 void OrderEntry::process_response(Trace<web::rest::Response> const &event, auto error_handler, auto success_handler) {

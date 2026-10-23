@@ -2,6 +2,8 @@
 
 #include "roq/aster_futures/gateway/request.hpp"
 
+#include "roq/logging.hpp"
+
 using namespace std::literals;
 
 namespace roq {

@@ -19,6 +19,7 @@
 #include "roq/server/stream.hpp"
 
 #include "roq/aster_futures/gateway/account.hpp"
+#include "roq/aster_futures/gateway/listen_key_update.hpp"
 #include "roq/aster_futures/gateway/request.hpp"
 #include "roq/aster_futures/gateway/shared.hpp"
 
@@ -29,9 +30,17 @@ namespace aster_futures {
 namespace gateway {
 
 struct DropCopy final : public Base<DropCopy>, public server::Stream, public web::socket::Client::Handler, protocol::json::Parser::Handler {
-  struct Handler {};
+  struct Remove final {
+    std::string_view account;
+  };
+
+  struct Handler {
+    virtual void operator()(Trace<Remove> const &) = 0;
+  };
 
   DropCopy(Handler &, io::Context &, uint16_t stream_id, Account &, Shared &, Request &, std::string_view const &listen_key);
+
+  void operator()(Trace<ListenKeyUpdate> const &);
 
   // protected:
   friend base_type;
@@ -94,7 +103,10 @@ struct DropCopy final : public Base<DropCopy>, public server::Stream, public web
 
   // helpers
 
+  void close_and_restart();
+
   void check_response(TraceInfo const &);
+  void check_listen_key(TraceInfo const &);
 
   void parse(TraceInfo const &, std::string_view const &message);
 
@@ -103,6 +115,7 @@ struct DropCopy final : public Base<DropCopy>, public server::Stream, public web
   // config
   uint16_t const stream_id_;
   std::string const name_;
+  std::string const listen_key_;
   // web socket
   std::unique_ptr<web::socket::Client> connection_;
   // buffers
@@ -125,6 +138,9 @@ struct DropCopy final : public Base<DropCopy>, public server::Stream, public web
   // state
   ConnectionStatus connection_status_ = {};
   core::Download2<State> download_;
+  //
+  std::chrono::nanoseconds next_listen_key_refresh_ = {};
+  bool stop_ = {};
 };
 
 }  // namespace gateway

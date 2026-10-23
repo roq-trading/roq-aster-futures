@@ -52,17 +52,20 @@ std::string_view Encoder::place_order(
     server::oms::RefData const &ref_data,
     std::string_view const &request_id) {
   buffer.clear();
+  auto reduce_only = create_order.execution_instructions.has(ExecutionInstruction::DO_NOT_INCREASE);
   fmt::format_to(
       std::back_inserter(buffer),
       "newClientOrderId={}"
       "&symbol={}"
       "&type={}"
       "&side={}"
+      "&reduceOnly={}"
       "&quantity={}"sv,
       request_id,
       create_order.symbol,
       map(create_order.order_type).template get<json::OrderType>().as_raw_text(),
       map(create_order.side).template get<json::Side>().as_raw_text(),
+      reduce_only,
       Decimal{create_order.quantity, ref_data.quantity.precision});
   if (create_order.order_type == roq::OrderType::LIMIT) {
     auto time_in_force = [&]() -> json::TimeInForce {

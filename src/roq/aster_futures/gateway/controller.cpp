@@ -98,9 +98,14 @@ Controller::Controller(server::Dispatcher &dispatcher, Settings const &settings,
 // server::Handler
 
 void Controller::operator()(Trace<Start> const &event) {
+  auto &[trace_info, start] = event;
   log::info("Starting..."sv);
   assert(std::empty(market_data_));
   dispatch(event);
+  // create listen-keys
+  for (auto &[_, item] : requests_) {
+    (*item).listen_key.request(trace_info);
+  }
 }
 
 void Controller::operator()(Trace<Stop> const &event) {
@@ -109,6 +114,8 @@ void Controller::operator()(Trace<Stop> const &event) {
 }
 
 void Controller::operator()(Trace<Timer> const &event) {
+  auto &[trace_info, timer] = event;
+  check_drop_copy_zombies(trace_info);  // note! remove *BEFORE* dispatching timer
   dispatch(event);
 }
 
@@ -227,10 +234,44 @@ void Controller::operator()(Trace<ListenKeyUpdate> const &event) {
     Start start;
     create_trace_and_dispatch(*obj, trace_info, start);
     (*iter).second = std::move(obj);
+  } else {
+    (*(*iter).second)(event);
   }
 }
 
-// utilities
+// DropCopy::Handler
+
+void Controller::operator()(Trace<DropCopy::Remove> const &event) {
+  auto &[trace_info, remove] = event;
+  log::info(R"(Requesting DropCopy (user-stream) to be removed for account="{}"...)"sv, remove.account);
+  drop_copy_zombies_.insert(remove.account);
+}
+
+// helpers
+
+void Controller::check_drop_copy_zombies(TraceInfo const &trace_info) {
+  if (std::empty(drop_copy_zombies_)) {
+    return;
+  }
+  for (auto &account : drop_copy_zombies_) {
+    log::info(R"(Removing DropCopy (user-stream) for account="{}"...)"sv, account);
+    auto iter = drop_copy_.find(account);
+    if (iter == std::end(drop_copy_)) [[unlikely]] {
+      log::fatal("Unexpected"sv);
+    }
+    (*iter).second.reset();
+    log::info(R"(DropCopy (user-stream) was removed for account="{}")"sv, account);
+    auto iter_2 = order_entry_.find(account);
+    if (iter_2 == std::end(order_entry_)) {
+      log::fatal("Unexpected"sv);
+    }
+    (*(*iter_2).second).force_listen_key_refresh(trace_info);
+    //
+    log::warn("DEBUG requesting new listen-key..."sv);
+    get_request(requests_, account).listen_key.request(trace_info);
+  }
+  drop_copy_zombies_.clear();
+}
 
 void Controller::ensure_symbol_slices(TraceInfo const &trace_info, size_t size) {
   while (std::size(market_data_) < size) {
