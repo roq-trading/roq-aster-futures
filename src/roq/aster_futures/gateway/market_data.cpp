@@ -472,7 +472,6 @@ void MarketData::operator()(Trace<protocol::json::DepthUpdate> const &event) {
 void MarketData::operator()(Trace<protocol::json::ForceOrder> const &event) {
   auto &[trace_info, force_order] = event;
   log::info<2>("force_order={}"sv, force_order);
-  log::warn("DEBUG force_order={}"sv, force_order);
 }
 
 // - order management

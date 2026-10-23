@@ -79,8 +79,8 @@ struct create_metrics final : public utils::metrics::Factory {
 
 // === IMPLEMENTATION ===
 
-OrderEntry::OrderEntry(Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request)
-    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account)},
+OrderEntry::OrderEntry(Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request, bool master)
+    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account)}, master_{master},
       connection_{create_connection(*this, shared.settings, context, shared)}, decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
@@ -111,12 +111,6 @@ OrderEntry::OrderEntry(Handler &handler, io::Context &context, uint16_t stream_i
       account_{account}, shared_{shared}, request_{request} {
 }
 
-void OrderEntry::force_listen_key_refresh(TraceInfo const &trace_info) {
-  log::info("Requesting listen-key refresh..."sv);
-  log::warn("HERE"sv);
-  request_.account.request(trace_info);
-}
-
 // server::Stream
 
 void OrderEntry::operator()(Trace<Start> const &) {
@@ -130,7 +124,7 @@ void OrderEntry::operator()(Trace<Stop> const &) {
 void OrderEntry::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
   if ((*connection_).refresh(timer.now)) {
-    if (ready()) {
+    if (master_ && ready()) {
       check_request_queue(trace_info);
       check_countdown_cancel_all(trace_info);
     }

@@ -56,11 +56,18 @@ template <typename R>
 R create_order_entry(auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &requests) {
   using result_type = std::remove_cvref_t<R>;
   result_type result;
+  if (!shared.settings.misc.number_of_order_entry_connections) {
+    log::fatal("Unexpected: --number_of_order_entry_connections={}"sv, shared.settings.misc.number_of_order_entry_connections);
+  }
   for (auto &[_, item] : accounts) {
     auto &account = *item;
     auto &request = get_request(requests, account.name);
-    auto obj = std::make_unique<OrderEntry>(gateway, context, ++stream_id, account, shared, request);
-    result.try_emplace(static_cast<std::string_view>(account.name), std::move(obj));
+    std::vector<std::unique_ptr<OrderEntry>> order_entry;
+    for (size_t i = 0; i < shared.settings.misc.number_of_order_entry_connections; ++i) {
+      auto obj = std::make_unique<OrderEntry>(gateway, context, ++stream_id, account, shared, request, i == 0);
+      order_entry.emplace_back(std::move(obj));
+    }
+    result.try_emplace(static_cast<std::string_view>(account.name), std::move(order_entry));
   }
   return result;
 }
@@ -261,11 +268,6 @@ void Controller::check_drop_copy_zombies(TraceInfo const &trace_info) {
     }
     (*iter).second.reset();
     log::info(R"(DropCopy (user-stream) was removed for account="{}")"sv, account);
-    auto iter_2 = order_entry_.find(account);
-    if (iter_2 == std::end(order_entry_)) {
-      log::fatal("Unexpected"sv);
-    }
-    (*(*iter_2).second).force_listen_key_refresh(trace_info);
     //
     log::warn("DEBUG requesting new listen-key..."sv);
     get_request(requests_, account).listen_key.request(trace_info);
@@ -293,7 +295,7 @@ void Controller::dispatch_helper(auto &self, Args &&...args) {
   auto helper = [&](auto &target) { target(args...); };
   helper(self.rest_);
   for (auto &[_, order_entry] : self.order_entry_) {
-    helper(*order_entry);
+    helper(order_entry);
   }
   for (auto &[_, drop_copy] : self.drop_copy_) {
     if (static_cast<bool>(drop_copy)) {
@@ -308,9 +310,47 @@ void Controller::dispatch_helper(auto &self, Args &&...args) {
 OrderEntry &Controller::get_order_entry(std::string_view const &account) {
   auto iter = order_entry_.find(account);
   if (iter != std::end(order_entry_)) {
-    return *(*iter).second;
+    return (*iter).second.get_next();
   }
   throw RuntimeError(R"(Unknown account="{}")"sv, account);
+}
+
+// OrderEntryRR
+
+Controller::OrderEntryRR::OrderEntryRR(std::vector<std::unique_ptr<OrderEntry>> &&order_entry) : order_entry_{std::move(order_entry)} {
+  for (auto &item : order_entry_) {
+    if (item == nullptr) {
+      log::fatal("HERE"sv);
+    }
+  }
+}
+
+template <typename... Args>
+void Controller::OrderEntryRR::operator()(Args &&...args) {
+  for (auto &item : order_entry_) {
+    (*item)(args...);
+  }
+}
+
+template <typename... Args>
+void Controller::OrderEntryRR::operator()(Args &&...args) const {
+  for (auto &item : order_entry_) {
+    (*item)(args...);
+  }
+}
+
+OrderEntry &Controller::OrderEntryRR::get_next() {
+  auto length = std::size(order_entry_);
+  for (size_t offset = 0; offset < length; ++offset) {
+    auto index = (index_ + offset) % length;
+    auto &order_entry = *(order_entry_[index]);
+    if (!order_entry.ready()) {
+      continue;
+    }
+    index_ = (index + 1) % length;
+    return order_entry;
+  }
+  throw server::oms::NotReady{"get_next"sv};
 }
 
 }  // namespace gateway
