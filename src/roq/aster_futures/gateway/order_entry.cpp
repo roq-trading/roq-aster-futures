@@ -249,7 +249,6 @@ void OrderEntry::operator()(Trace<web::rest::Latency> const &event) {
 void OrderEntry::get_listen_key(TraceInfo const &trace_info) {
   profile_.listen_key([&]() {
     auto query = protocol::json::Encoder::listen_key(encode_buffer_);
-    log::warn(R"(DEBUG query="{}")"sv, query);
     auto query_2 = account_.create_query(trace_info, query);
     auto request = web::rest::Request{
         .method = web::http::Method::POST,
@@ -298,7 +297,6 @@ void OrderEntry::operator()(Trace<protocol::json::ListenKeyAck> const &event) {
 void OrderEntry::get_account(TraceInfo const &trace_info) {
   profile_.account([&]() {
     auto query = protocol::json::Encoder::account(encode_buffer_);
-    log::warn(R"(DEBUG query="{}")"sv, query);
     auto query_2 = account_.create_query(trace_info, query);
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
@@ -377,7 +375,6 @@ void OrderEntry::operator()(Trace<protocol::json::AccountAck> const &event) {
 void OrderEntry::get_open_orders(TraceInfo const &trace_info) {
   profile_.open_orders([&]() {
     auto query = protocol::json::Encoder::open_orders(encode_buffer_);
-    log::warn(R"(DEBUG query="{}")"sv, query);
     auto query_2 = account_.create_query(trace_info, query);
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
@@ -466,7 +463,6 @@ void OrderEntry::get_user_trades(TraceInfo const &trace_info) {
     auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(trace_info.origin_create_time_utc - shared_.settings.rest.download_fills_begin);
     auto helper = [&](auto &symbol) {
       auto query = protocol::json::Encoder::user_trades(encode_buffer_, start_time, symbol);
-      log::warn(R"(DEBUG query="{}")"sv, query);
       auto query_2 = account_.create_query(trace_info, query);
       auto request = web::rest::Request{
           .method = web::http::Method::GET,
@@ -519,7 +515,6 @@ void OrderEntry::place_order(
     }
     auto &[message_info, create_order] = event;
     auto query = protocol::json::Encoder::place_order(encode_buffer_, create_order, order, ref_data, request_id);
-    log::warn(R"(DEBUG query="{}")"sv, query);
     auto query_2 = account_.create_query(message_info, query);
     auto request = web::rest::Request{
         .method = web::http::Method::POST,
@@ -632,7 +627,6 @@ void OrderEntry::modify_order(
     }
     auto &[message_info, modify_order] = event;
     auto query = protocol::json::Encoder::modify_order(encode_buffer_, modify_order, order, ref_data, request_id);
-    log::warn(R"(DEBUG query="{}")"sv, query);
     auto query_2 = account_.create_query(message_info, query);
     auto request = web::rest::Request{
         .method = web::http::Method::PUT,
@@ -743,7 +737,6 @@ void OrderEntry::cancel_order(
     }
     auto &[message_info, cancel_order] = event;
     auto query = protocol::json::Encoder::cancel_order(encode_buffer_, cancel_order, order, ref_data, request_id);
-    log::warn(R"(DEBUG query="{}")"sv, query);
     auto query_2 = account_.create_query(message_info, query);
     auto request = web::rest::Request{
         .method = web::http::Method::DELETE,
@@ -850,7 +843,6 @@ void OrderEntry::cancel_all_orders(Event<CancelAllOrders> const &event, std::str
     auto &[message_info, cancel_all_orders] = event;
     auto helper = [&](std::string_view const &symbol) {
       auto query = protocol::json::Encoder::cancel_all_orders(encode_buffer_, cancel_all_orders, request_id, symbol);
-      log::warn(R"(DEBUG query="{}")"sv, query);
       auto query_2 = account_.create_query(message_info, query);
       auto request = web::rest::Request{
           .method = web::http::Method::DELETE,
@@ -922,7 +914,6 @@ void OrderEntry::countdown_cancel_all(TraceInfo const &trace_info) {
   profile_.countdown_cancel_all([&]() {
     auto query =
         protocol::json::Encoder::countdown_cancel_all(encode_buffer_, std::chrono::duration_cast<std::chrono::seconds>(shared_.settings.rest.ping_freq), {});
-    log::warn(R"(DEBUG query="{}")"sv, query);
     auto query_2 = account_.create_query(trace_info, query);
     auto request = web::rest::Request{
         .method = web::http::Method::POST,

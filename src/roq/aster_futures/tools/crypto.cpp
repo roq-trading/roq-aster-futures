@@ -45,6 +45,7 @@ std::string Crypto::sign_message(std::chrono::microseconds now_utc, std::string_
     fmt::format_to(std::back_inserter(message_for_signing), "{}&"sv, message);
   }
   fmt::format_to(std::back_inserter(message_for_signing), "nonce={}&signer={}"sv, nonce.count(), account_.get_address());
+  log::warn(R"(DEBUG message="{}")"sv, message_for_signing);
   std::array<utils::eth::Field, 1> data{{
       {
           .name = "msg"sv,
