@@ -31,8 +31,8 @@ auto const SUPPORTS = Mask{
 
 size_t const MAX_DECODE_BUFFER_DEPTH = 2;
 
-// auto const LISTEN_KEY_REFRESH_FREQ = 15min;
-auto const LISTEN_KEY_REFRESH_FREQ = 360min;
+auto const LISTEN_KEY_REFRESH_FREQ = 15min;
+// auto const LISTEN_KEY_REFRESH_FREQ = 360min;
 }  // namespace
 
 // === HELPERS ===
