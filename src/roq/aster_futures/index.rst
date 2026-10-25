@@ -320,8 +320,8 @@ Outbound
 Comments
 --------
 
-* The exchange supports auto-cancel on disconnect.
-  This can be enabled using the flags.
+* GTX orders will initially report that the order is working.
+  This is the case for both the REST response and the initial WS update.
 
 
 References

@@ -311,11 +311,11 @@ void OrderEntry::get_account(TraceInfo const &trace_info) {
 void OrderEntry::get_account_ack(Trace<web::rest::Response> const &event) {
   profile_.account_ack([&]() {
     auto &[trace_info, response] = event;
+    // log::warn("DEBUG response={}"sv, response);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
     };
     auto handle_success = [&](auto &body) {
-      // log::warn("DEBUG body={}"sv, body);
       protocol::json::AccountAck account_ack{body, decode_buffer_};
       create_trace_and_dispatch_2(trace_info, account_ack);
     };
@@ -388,6 +388,7 @@ void OrderEntry::get_open_orders(TraceInfo const &trace_info) {
 void OrderEntry::get_open_orders_ack(Trace<web::rest::Response> const &event) {
   profile_.open_orders_ack([&]() {
     auto &[trace_info, response] = event;
+    log::warn("DEBUG response={}"sv, response);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
     };
@@ -480,6 +481,7 @@ void OrderEntry::get_user_trades(TraceInfo const &trace_info) {
 void OrderEntry::get_user_trades_ack(Trace<web::rest::Response> const &event) {
   profile_.user_trades_ack([&]() {
     auto &[trace_info, response] = event;
+    log::warn("DEBUG response={}"sv, response);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
     };
@@ -531,6 +533,7 @@ void OrderEntry::place_order(
 void OrderEntry::place_order_ack(Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   profile_.place_order_ack([&]() {
     auto &[trace_info, response] = event;
+    log::warn("DEBUG response={}"sv, response);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(DEBUG origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       auto response = server::oms::Response{
@@ -641,6 +644,7 @@ void OrderEntry::modify_order(
 void OrderEntry::modify_order_ack(Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   profile_.modify_order_ack([&]() {
     auto &[trace_info, response] = event;
+    log::warn("DEBUG response={}"sv, response);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(DEBUG origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       auto response = server::oms::Response{
@@ -751,6 +755,7 @@ void OrderEntry::cancel_order(
 void OrderEntry::cancel_order_ack(Trace<web::rest::Response> const &event, uint8_t user_id, uint64_t order_id, uint32_t version) {
   profile_.cancel_order_ack([&]() {
     auto &[trace_info, response] = event;
+    log::warn("DEBUG response={}"sv, response);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(DEBUG origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       auto response = server::oms::Response{
@@ -835,7 +840,10 @@ void OrderEntry::cancel_all_orders(Event<CancelAllOrders> const &event, std::str
       throw server::oms::NotReady{"not ready"sv};
     }
     auto &[message_info, cancel_all_orders] = event;
-    auto helper = [&](std::string_view const &symbol) {
+    auto helper = [&](auto &symbol) {
+      if (!std::empty(cancel_all_orders.symbol) && symbol != cancel_all_orders.symbol) {
+        return;
+      }
       auto query = protocol::json::Encoder::cancel_all_orders(encode_buffer_, cancel_all_orders, request_id, symbol);
       auto query_2 = account_.create_query(message_info, query);
       auto request = web::rest::Request{
@@ -851,10 +859,9 @@ void OrderEntry::cancel_all_orders(Event<CancelAllOrders> const &event, std::str
       auto callback = [this, user_id = message_info.source](auto &event, [[maybe_unused]] auto &request_id) { cancel_all_orders_ack(event, user_id); };
       (*connection_)(request, callback, request_id);
     };
-    if (std::empty(cancel_all_orders.symbol)) {
-      helper("BTCUSDT"sv);  // XXX FIXME TODO
+    if (shared_.dispatcher.get_all_order_symbols(helper, account_.name)) {
     } else {
-      helper({});
+      log::warn("*** NOT POSSIBLE TO CANCEL ALL OPEN ORDERS (NO SYMBOLS) ***"sv);
     }
   });
 }
@@ -862,6 +869,7 @@ void OrderEntry::cancel_all_orders(Event<CancelAllOrders> const &event, std::str
 void OrderEntry::cancel_all_orders_ack(Trace<web::rest::Response> const &event, [[maybe_unused]] uint8_t user_id) {
   profile_.cancel_all_orders_ack([&]() {
     auto &[trace_info, response] = event;
+    log::warn("DEBUG response={}"sv, response);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(DEBUG origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       auto cancel_all_orders_ack = CancelAllOrdersAck{
@@ -927,6 +935,7 @@ void OrderEntry::countdown_cancel_all(TraceInfo const &trace_info) {
 void OrderEntry::countdown_cancel_all_ack(Trace<web::rest::Response> const &event) {
   profile_.countdown_cancel_all_ack([&]() {
     auto &[trace_info, response] = event;
+    log::warn("DEBUG response={}"sv, response);
     auto [status, category, body] = response.result();
     if (status != web::http::Status::OK) {
       log::warn(R"(DEBUG status={}, category={}, body="{}")"sv, status, category, body);
@@ -966,7 +975,6 @@ void OrderEntry::process_response(Trace<web::rest::Response> const &event, auto 
   auto &[trace_info, response] = event;
   try {
     auto [status, category, body] = response.result();
-    log::warn("DEBUG status={}, category={}, body={}"sv, status, category, body);
     switch (category) {
       using enum web::http::Category;
       case UNKNOWN:
