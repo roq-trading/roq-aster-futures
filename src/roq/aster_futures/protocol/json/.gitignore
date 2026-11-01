@@ -19,6 +19,7 @@ contract_type.hpp
 depth_ack.hpp
 depth_update.hpp
 depth_update_item.hpp
+error_ack.hpp
 event_reason_type.hpp
 event_type.hpp
 exchange_info_ack.hpp
@@ -39,6 +40,7 @@ mini_ticker.hpp
 modify_order_ack.hpp
 open_orders_ack.hpp
 open_orders_ack_item.hpp
+order_ack.hpp
 order_status.hpp
 order_trade_update.hpp
 order_trade_update_order.hpp
@@ -73,6 +75,7 @@ contract_type.cpp
 depth_ack.cpp
 depth_update.cpp
 depth_update_item.cpp
+error_ack.cpp
 event_reason_type.cpp
 event_type.cpp
 exchange_info_ack.cpp
@@ -93,6 +96,7 @@ mini_ticker.cpp
 modify_order_ack.cpp
 open_orders_ack.cpp
 open_orders_ack_item.cpp
+order_ack.cpp
 order_status.cpp
 order_trade_update.cpp
 order_trade_update_order.cpp

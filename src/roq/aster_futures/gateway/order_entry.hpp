@@ -28,6 +28,7 @@
 
 #include "roq/aster_futures/protocol/json/account_ack.hpp"
 #include "roq/aster_futures/protocol/json/open_orders_ack.hpp"
+#include "roq/aster_futures/protocol/json/order_ack.hpp"
 #include "roq/aster_futures/protocol/json/user_trades_ack.hpp"
 
 #include "roq/aster_futures/protocol/json/cancel_all_orders_ack.hpp"
@@ -106,6 +107,12 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
   void get_open_orders_ack(Trace<web::rest::Response> const &);
   void operator()(Trace<protocol::json::OpenOrdersAck> const &);
 
+  // order
+
+  void get_order(TraceInfo const &, std::string_view const &client_order_id, std::string_view const &external_order_id, std::string_view const &symbol);
+  void get_order_ack(Trace<web::rest::Response> const &, std::string_view const &client_order_id);
+  void operator()(Trace<protocol::json::OrderAck> const &);
+
   // user-trades
 
   void get_user_trades(TraceInfo const &);
@@ -178,6 +185,7 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
     utils::metrics::Profile listen_key, listen_key_ack,  //
         account, account_ack,                            //
         open_orders, open_orders_ack,                    //
+        order, order_ack,                                //
         user_trades, user_trades_ack,                    //
         place_order, place_order_ack,                    //
         modify_order, modify_order_ack,                  //
@@ -199,6 +207,8 @@ struct OrderEntry final : public Base<OrderEntry>, public server::OrderActionStr
   //
   std::chrono::nanoseconds next_heartbeat_ = {};
   std::chrono::nanoseconds xxx_ = {};
+  //
+  size_t download_lost_orders_counter_ = {};
 };
 
 }  // namespace gateway

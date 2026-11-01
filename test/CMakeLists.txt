@@ -18,6 +18,7 @@ set(SOURCES
     json_account_ack.cpp
     json_listen_key_ack.cpp
     json_open_orders_ack.cpp
+    json_order_ack.cpp
     json_user_trades_ack.cpp
     json_place_order_ack.cpp
     json_cancel_order_ack.cpp

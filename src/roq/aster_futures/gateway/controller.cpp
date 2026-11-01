@@ -19,8 +19,9 @@ template <typename R>
 R create_accounts(auto &settings, auto &config) {
   using value_type = std::remove_cvref_t<R>;
   value_type result;
-  for (auto &[_, iter] : config.accounts) {
-    result.try_emplace(static_cast<std::string_view>(iter.name), std::make_unique<Account>(settings, config, iter.name));
+  for (auto &[_, account] : config.accounts) {
+    auto obj = std::make_unique<Account>(settings, config, account.name);
+    result.try_emplace(account.name, std::move(obj));
   }
   return result;
 }
@@ -38,8 +39,8 @@ R create_requests(auto &config, auto &shared) {
   using result_type = std::remove_cvref_t<R>;
   result_type result;
   for (auto &[_, account] : config.accounts) {
-    auto request = std::make_unique<Request>(shared);
-    result.try_emplace(static_cast<std::string_view>(account.name), std::move(request));
+    auto obj = std::make_unique<Request>(shared);
+    result.try_emplace(account.name, std::move(obj));
   }
   return result;
 }
@@ -67,7 +68,7 @@ R create_order_entry(auto &gateway, auto &context, auto &stream_id, auto &accoun
       auto obj = std::make_unique<OrderEntry>(gateway, context, ++stream_id, account, shared, request, i == 0);
       order_entry.emplace_back(std::move(obj));
     }
-    result.try_emplace(static_cast<std::string_view>(account.name), std::move(order_entry));
+    result.try_emplace(account.name, std::move(order_entry));
   }
   return result;
 }

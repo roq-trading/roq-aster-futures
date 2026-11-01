@@ -12,6 +12,8 @@
 #include "roq/aster_futures/protocol/json/map.hpp"
 #include "roq/aster_futures/protocol/json/utils.hpp"
 
+#include "roq/aster_futures/protocol/json/error_ack.hpp"
+
 using namespace std::literals;
 
 namespace roq {
@@ -24,12 +26,12 @@ namespace {
 auto const NAME = "om"sv;
 
 auto const SUPPORTS = Mask{
+    SupportType::FUNDS,
+    SupportType::POSITION,
     SupportType::CREATE_ORDER,
     SupportType::MODIFY_ORDER,
     SupportType::CANCEL_ORDER,
     SupportType::ORDER_ACK,
-    SupportType::FUNDS,
-    SupportType::POSITION,
 };
 
 size_t const MAX_DECODE_BUFFER_DEPTH = 2;
@@ -92,6 +94,8 @@ OrderEntry::OrderEntry(Handler &handler, io::Context &context, uint16_t stream_i
           .account_ack = create_metrics(shared.settings, name_, "account_ack"sv),
           .open_orders = create_metrics(shared.settings, name_, "open_orders"sv),
           .open_orders_ack = create_metrics(shared.settings, name_, "open_orders_ack"sv),
+          .order = create_metrics(shared.settings, name_, "order"sv),
+          .order_ack = create_metrics(shared.settings, name_, "order_ack"sv),
           .user_trades = create_metrics(shared.settings, name_, "user_trades"sv),
           .user_trades_ack = create_metrics(shared.settings, name_, "user_trades_ack"sv),
           .place_order = create_metrics(shared.settings, name_, "place_order"sv),
@@ -142,6 +146,8 @@ void OrderEntry::operator()(metrics::Writer &writer) const {
       .write(profile_.account_ack, metrics::Type::PROFILE)
       .write(profile_.open_orders, metrics::Type::PROFILE)
       .write(profile_.open_orders_ack, metrics::Type::PROFILE)
+      .write(profile_.order, metrics::Type::PROFILE)
+      .write(profile_.order_ack, metrics::Type::PROFILE)
       .write(profile_.user_trades, metrics::Type::PROFILE)
       .write(profile_.user_trades_ack, metrics::Type::PROFILE)
       .write(profile_.place_order, metrics::Type::PROFILE)
@@ -450,6 +456,140 @@ void OrderEntry::operator()(Trace<protocol::json::OpenOrdersAck> const &event) {
   }
 }
 
+// order
+
+void OrderEntry::get_order(
+    TraceInfo const &trace_info, std::string_view const &client_order_id, std::string_view const &external_order_id, std::string_view const &symbol) {
+  profile_.order([&]() {
+    auto query = protocol::json::Encoder::order(encode_buffer_, symbol, client_order_id, external_order_id);
+    auto query_2 = account_.create_query(trace_info, query);
+    auto request = web::rest::Request{
+        .method = web::http::Method::GET,
+        .path = shared_.api.order_management.order,
+        .query = query_2,
+        .accept = web::http::Accept::APPLICATION_JSON,
+        .content_type = web::http::ContentType::APPLICATION_X_WWW_FORM_URLENCODED,
+        .headers = {},
+        .body = {},
+        .quality_of_service = {},
+    };
+    auto callback = [this, client_order_id = std::string{client_order_id}](auto &event, [[maybe_unused]] auto &request_id) {
+      get_order_ack(event, client_order_id);
+    };
+    (*connection_)(request, callback, "order"sv);
+  });
+}
+
+void OrderEntry::get_order_ack(Trace<web::rest::Response> const &event, std::string_view const &client_order_id) {
+  profile_.order_ack([&]() {
+    auto &[trace_info, response] = event;
+    log::warn("DEBUG response={}"sv, response);
+    auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
+      log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      auto order_update = server::oms::OrderUpdate{
+          .account = account_.name,
+          .exchange = {},
+          .symbol = {},
+          .side = {},
+          .position_effect = {},
+          .margin_mode = {},
+          .max_show_quantity = NaN,
+          .order_type = {},
+          .time_in_force = {},
+          .execution_instructions = {},
+          .execution_destination = {},
+          .create_time_utc = {},
+          .update_time_utc = {},
+          .external_account = {},
+          .external_order_id = {},
+          .client_order_id = client_order_id,
+          .order_status = OrderStatus::REJECTED,
+          .error = {},
+          .text = {},
+          .quantity = NaN,
+          .price = NaN,
+          .stop_price = NaN,
+          .leverage = NaN,
+          .remaining_quantity = NaN,
+          .traded_quantity = NaN,
+          .average_traded_price = NaN,
+          .last_traded_quantity = NaN,
+          .last_traded_price = NaN,
+          .last_liquidity = {},
+          .routing_id = {},
+          .max_request_version = {},
+          .max_response_version = {},
+          .max_accepted_version = {},
+          .update_type = UpdateType::SNAPSHOT,
+          .sending_time_utc = {},
+      };
+      log::warn("DEBUG order_update={}"sv, order_update);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
+    };
+    auto handle_success = [&](auto &body) {
+      protocol::json::OrderAck order_ack{body, decode_buffer_};
+      create_trace_and_dispatch_2(trace_info, order_ack);
+    };
+    process_response(event, handle_error, handle_success);
+    //
+    if (download_lost_orders_counter_) {
+      --download_lost_orders_counter_;
+    } else {
+      log::fatal("Unexpected"sv);
+    }
+    log::warn("DEBUG remaining orders: {}"sv, download_lost_orders_counter_);
+    if (download_lost_orders_counter_ == 0) {
+      request_.lost_orders.commit(trace_info);
+    }
+  });
+}
+
+void OrderEntry::operator()(Trace<protocol::json::OrderAck> const &event) {
+  auto &[trace_info, order_ack] = event;
+  log::info<4>("order_ack={}"sv, order_ack);
+  auto external_order_id = fmt::format("{}"sv, order_ack.order_id);
+  auto remaining_quantity = order_ack.orig_qty - order_ack.executed_qty;
+  auto order_update = server::oms::OrderUpdate{
+      .account = account_.name,
+      .exchange = shared_.settings.exchange,
+      .symbol = order_ack.symbol,
+      .side = map(order_ack.side),
+      .position_effect = map(order_ack.position_side, order_ack.side),
+      .margin_mode = {},
+      .max_show_quantity = NaN,
+      .order_type = map(order_ack.type),
+      .time_in_force = map(order_ack.time_in_force),
+      .execution_instructions = {},  // XXX map from time_in_force + reduce_only
+      .execution_destination = {},
+      .create_time_utc = order_ack.time,
+      .update_time_utc = order_ack.update_time,
+      .external_account = {},
+      .external_order_id = external_order_id,
+      .client_order_id = order_ack.client_order_id,
+      .order_status = map(order_ack.status),
+      .error = {},
+      .text = {},
+      .quantity = order_ack.orig_qty,
+      .price = order_ack.price,
+      .stop_price = NaN,
+      .leverage = NaN,
+      .remaining_quantity = remaining_quantity,
+      .traded_quantity = order_ack.executed_qty,
+      .average_traded_price = order_ack.avg_price,
+      .last_traded_quantity = NaN,
+      .last_traded_price = NaN,
+      .last_liquidity = {},
+      .routing_id = {},
+      .max_request_version = {},
+      .max_response_version = {},
+      .max_accepted_version = {},
+      .update_type = UpdateType::SNAPSHOT,
+      .sending_time_utc = {},
+  };
+  log::warn("DEBUG order_update={}"sv, order_update);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
+}
+
 // user-trades
 
 void OrderEntry::get_user_trades(TraceInfo const &trace_info) {
@@ -490,7 +630,7 @@ void OrderEntry::get_user_trades_ack(Trace<web::rest::Response> const &event) {
       create_trace_and_dispatch_2(trace_info, user_trades);
     };
     process_response(event, handle_error, handle_success);
-    request_.user_trades.commit(trace_info);
+    request_.trades.commit(trace_info);
   });
 }
 
@@ -946,22 +1086,22 @@ void OrderEntry::countdown_cancel_all_ack(Trace<web::rest::Response> const &even
 // helpers
 
 void OrderEntry::check_request_queue(TraceInfo const &trace_info) {
-  request_.listen_key.check_pending(trace_info, [this](auto &trace_info) {
-    log::warn("Requesting listen-key..."sv);
-    get_listen_key(trace_info);
+  request_.listen_key.check_pending(trace_info, [this](auto &trace_info) { get_listen_key(trace_info); });
+  request_.account.check_pending(trace_info, [this](auto &trace_info) { get_account(trace_info); });
+  request_.open_orders.check_pending(trace_info, [this](auto &trace_info) { get_open_orders(trace_info); });
+  request_.lost_orders.check_pending(trace_info, [this](auto &trace_info) {
+    // XXX FIXME TODO throttle requests
+    auto helper = [&](auto &order) { get_order(trace_info, order.client_order_id, order.external_order_id, order.symbol); };
+    for (auto &[user_id, order_id] : request_.details_lost_orders) {
+      if (shared_.dispatcher.find_order(user_id, order_id, helper)) {
+        ++download_lost_orders_counter_;
+      } else {
+        log::warn("Unexpected: user_id={}, order_id={}"sv, user_id, order_id);
+      }
+    }
+    request_.details_lost_orders.clear();
   });
-  request_.account.check_pending(trace_info, [this](auto &trace_info) {
-    log::warn("Requesting account..."sv);
-    get_account(trace_info);
-  });
-  request_.open_orders.check_pending(trace_info, [this](auto &trace_info) {
-    log::warn("Requesting open-orders..."sv);
-    get_open_orders(trace_info);
-  });
-  request_.user_trades.check_pending(trace_info, [this](auto &trace_info) {
-    log::warn("Requesting user-trades..."sv);
-    get_user_trades(trace_info);
-  });
+  request_.trades.check_pending(trace_info, [this](auto &trace_info) { get_user_trades(trace_info); });
 }
 
 void OrderEntry::check_countdown_cancel_all(TraceInfo const &trace_info) {
@@ -998,10 +1138,14 @@ void OrderEntry::process_response(Trace<web::rest::Response> const &event, auto 
           case CONFLICT:  // 409
             assert(false);
             [[fallthrough]];
-          default: {
-            // protocol::json::Message error{body};
-            // XXX HANS error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(error.code), error.msg);
-          }
+          default:
+            if (std::empty(body)) {
+              std::string_view message;
+              error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, Error::UNKNOWN, message);
+            } else {
+              protocol::json::ErrorAck error_ack{body};
+              error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(error_ack.code), error_ack.msg);
+            }
         }
         break;
       case SERVER_ERROR: {

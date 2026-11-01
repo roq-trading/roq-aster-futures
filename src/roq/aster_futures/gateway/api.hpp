@@ -20,6 +20,7 @@ struct API final {
     std::string_view listen_key;
     std::string_view account;
     std::string_view open_orders;
+    std::string_view order;
     std::string_view user_trades;
     std::string_view place_order;
     std::string_view modify_order;

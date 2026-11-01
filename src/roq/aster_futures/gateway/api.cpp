@@ -22,6 +22,7 @@ API API::create(Settings const &) {
           .listen_key = "/fapi/v3/listenKey"sv,
           .account = "/fapi/v3/accountWithJoinMargin"sv,
           .open_orders = "/fapi/v3/openOrders"sv,
+          .order = "/fapi/v3/order"sv,
           .user_trades = "/fapi/v3/userTrades"sv,
           .place_order = "/fapi/v3/order"sv,
           .modify_order = "/fapi/v3/order"sv,

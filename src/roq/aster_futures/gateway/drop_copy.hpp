@@ -49,7 +49,7 @@ struct DropCopy final : public Base<DropCopy>, public server::Stream, public web
 
   uint16_t stream_id() const override { return stream_id_; }
 
-  bool ready() const override;
+  bool ready() const override { return connection_status_ == ConnectionStatus::READY; }
 
   void operator()(Trace<Start> const &) override;
   void operator()(Trace<Stop> const &) override;
@@ -74,9 +74,10 @@ struct DropCopy final : public Base<DropCopy>, public server::Stream, public web
 
   enum class State {
     UNDEFINED = 0,
-    ACCOUNT,
-    OPEN_ORDERS,
-    USER_TRADES,
+    GET_ACCOUNT,
+    GET_OPEN_ORDERS,
+    GET_LOST_ORDERS,
+    GET_TRADES,
     DONE,
   };
 
@@ -107,6 +108,9 @@ struct DropCopy final : public Base<DropCopy>, public server::Stream, public web
 
   void check_response(TraceInfo const &);
   void check_listen_key(TraceInfo const &);
+
+  bool check_stale_orders();
+  void check_stale_orders(TraceInfo const &);
 
   void parse(TraceInfo const &, std::string_view const &message);
 
@@ -141,6 +145,8 @@ struct DropCopy final : public Base<DropCopy>, public server::Stream, public web
   //
   std::chrono::nanoseconds next_listen_key_refresh_ = {};
   bool stop_ = {};
+  //
+  std::chrono::nanoseconds next_check_stale_orders_ = {};
 };
 
 }  // namespace gateway

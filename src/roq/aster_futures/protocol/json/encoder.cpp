@@ -34,6 +34,18 @@ std::string_view Encoder::open_orders(std::string &buffer, std::string_view cons
   return buffer;
 }
 
+std::string_view Encoder::order(
+    std::string &buffer, std::string_view const &symbol, std::string_view const &client_order_id, std::string_view const &external_order_id) {
+  buffer.clear();
+  fmt::format_to(std::back_inserter(buffer), "symbol={}"sv, symbol);
+  if (std::empty(external_order_id)) {
+    fmt::format_to(std::back_inserter(buffer), "&origClientOrderId={}"sv, client_order_id);
+  } else {
+    fmt::format_to(std::back_inserter(buffer), "&orderId={}"sv, external_order_id);
+  }
+  return buffer;
+}
+
 std::string_view Encoder::user_trades(std::string &buffer, std::chrono::milliseconds start_time, std::string_view const &symbol) {
   buffer.clear();
   fmt::format_to(

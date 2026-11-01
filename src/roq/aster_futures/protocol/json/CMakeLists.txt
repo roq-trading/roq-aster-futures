@@ -24,6 +24,7 @@ set(AUTOGEN_SCHEMAS
     depth_ack.json
     depth_update.json
     depth_update_item.json
+    error_ack.json
     event_reason_type.json
     event_type.json
     exchange_info_ack.json
@@ -44,6 +45,7 @@ set(AUTOGEN_SCHEMAS
     modify_order_ack.json
     open_orders_ack.json
     open_orders_ack_item.json
+    order_ack.json
     order_status.json
     order_trade_update.json
     order_trade_update_order.json

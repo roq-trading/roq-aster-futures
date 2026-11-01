@@ -26,6 +26,9 @@ struct Encoder final {
 
   static std::string_view open_orders(std::string &buffer, std::string_view const &symbol = {});
 
+  static std::string_view order(
+      std::string &buffer, std::string_view const &symbol, std::string_view const &client_order_id, std::string_view const &external_order_id);
+
   static std::string_view user_trades(std::string &buffer, std::chrono::milliseconds start_time, std::string_view const &symbol);
 
   static std::string_view place_order(

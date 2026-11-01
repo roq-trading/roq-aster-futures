@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "roq/utils/container.hpp"
+
 #include "roq/core/limit/request.hpp"
 
 #include "roq/aster_futures/gateway/shared.hpp"
@@ -23,7 +25,10 @@ struct Request final : public core::limit::Request::Handler {
   core::limit::Request listen_key;
   core::limit::Request account;
   core::limit::Request open_orders;
-  core::limit::Request user_trades;
+  core::limit::Request lost_orders;
+  core::limit::Request trades;
+
+  utils::unordered_set<std::pair<uint8_t, uint64_t>> details_lost_orders;
 
  private:
   Shared &shared_;
