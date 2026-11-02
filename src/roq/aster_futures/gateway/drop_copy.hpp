@@ -76,7 +76,7 @@ struct DropCopy final : public Base<DropCopy>, public server::Stream, public web
     UNDEFINED = 0,
     GET_ACCOUNT,
     GET_OPEN_ORDERS,
-    GET_LOST_ORDERS,
+    GET_STALE_ORDERS,
     GET_TRADES,
     DONE,
   };

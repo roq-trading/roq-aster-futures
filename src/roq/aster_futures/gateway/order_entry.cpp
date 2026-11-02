@@ -128,9 +128,11 @@ void OrderEntry::operator()(Trace<Stop> const &) {
 void OrderEntry::operator()(Trace<Timer> const &event) {
   auto &[trace_info, timer] = event;
   if ((*connection_).refresh(timer.now)) {
-    if (master_ && ready()) {
-      check_request_queue(trace_info);
-      check_countdown_cancel_all(trace_info);
+    if (ready()) {
+      if (master_) {
+        check_request_queue(trace_info);
+        check_countdown_cancel_all(trace_info);
+      }
     }
   }
 }
@@ -532,14 +534,14 @@ void OrderEntry::get_order_ack(Trace<web::rest::Response> const &event, std::str
     };
     process_response(event, handle_error, handle_success);
     //
-    if (download_lost_orders_counter_) {
-      --download_lost_orders_counter_;
+    if (download_stale_orders_counter_) {
+      --download_stale_orders_counter_;
     } else {
       log::fatal("Unexpected"sv);
     }
-    log::warn("DEBUG remaining orders: {}"sv, download_lost_orders_counter_);
-    if (download_lost_orders_counter_ == 0) {
-      request_.lost_orders.commit(trace_info);
+    log::warn("DEBUG remaining orders: {}"sv, download_stale_orders_counter_);
+    if (download_stale_orders_counter_ == 0) {
+      request_.stale_orders.commit(trace_info);
     }
   });
 }
@@ -1089,17 +1091,17 @@ void OrderEntry::check_request_queue(TraceInfo const &trace_info) {
   request_.listen_key.check_pending(trace_info, [this](auto &trace_info) { get_listen_key(trace_info); });
   request_.account.check_pending(trace_info, [this](auto &trace_info) { get_account(trace_info); });
   request_.open_orders.check_pending(trace_info, [this](auto &trace_info) { get_open_orders(trace_info); });
-  request_.lost_orders.check_pending(trace_info, [this](auto &trace_info) {
+  request_.stale_orders.check_pending(trace_info, [this](auto &trace_info) {
     // XXX FIXME TODO throttle requests
     auto helper = [&](auto &order) { get_order(trace_info, order.client_order_id, order.external_order_id, order.symbol); };
-    for (auto &[user_id, order_id] : request_.details_lost_orders) {
+    for (auto &[user_id, order_id] : request_.details_stale_orders) {
       if (shared_.dispatcher.find_order(user_id, order_id, helper)) {
-        ++download_lost_orders_counter_;
+        ++download_stale_orders_counter_;
       } else {
         log::warn("Unexpected: user_id={}, order_id={}"sv, user_id, order_id);
       }
     }
-    request_.details_lost_orders.clear();
+    request_.details_stale_orders.clear();
   });
   request_.trades.check_pending(trace_info, [this](auto &trace_info) { get_user_trades(trace_info); });
 }
