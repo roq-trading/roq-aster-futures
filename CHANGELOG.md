@@ -4,6 +4,10 @@ All notable changes will be documented in this file.
 
 ## Head
 
+### Changed
+
+* ETH/BTC signing using libsecp256k1 (#659)
+
 ## 1.1.9 &ndash; 2026-10-18
 
 ## 1.1.8 &ndash; 2026-09-04

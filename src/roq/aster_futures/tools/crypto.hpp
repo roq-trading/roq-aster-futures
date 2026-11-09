@@ -16,7 +16,7 @@ namespace aster_futures {
 namespace tools {
 
 struct Crypto final {
-  Crypto(std::string_view const &key, std::string_view const &secret);
+  Crypto(std::string_view const &key, std::string_view const &secret, bool disable_secp256k1);
 
   Crypto(Crypto &&) = delete;
   Crypto(Crypto const &) = delete;

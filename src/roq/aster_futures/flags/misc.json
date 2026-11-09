@@ -40,6 +40,11 @@
       "type": "std/uint32",
       "default": 1,
       "description": "Number of order-entry connections"
+    },
+    {
+      "name": "disable_secp256k1",
+      "type": "std/bool",
+      "description": "Disable secp256k1?"
     }
   ]
 }
