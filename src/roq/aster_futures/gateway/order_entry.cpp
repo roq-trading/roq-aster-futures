@@ -1039,7 +1039,8 @@ void OrderEntry::cancel_all_orders_ack(Trace<web::rest::Response> const &event, 
       if (cancel_all_orders_ack.code == 0) {
         create_trace_and_dispatch_2(trace_info, cancel_all_orders_ack, user_id);
       } else {
-        handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(cancel_all_orders_ack.code), cancel_all_orders_ack.msg);
+        auto error = map(cancel_all_orders_ack.code).template get<Error>();
+        handle_error(Origin::EXCHANGE, RequestStatus::REJECTED, error, cancel_all_orders_ack.msg);
       }
     };
     process_response(event, handle_error, handle_success);
@@ -1146,7 +1147,8 @@ void OrderEntry::process_response(Trace<web::rest::Response> const &event, auto 
               error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, Error::UNKNOWN, message);
             } else {
               protocol::json::ErrorAck error_ack{body};
-              error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, protocol::json::guess_error(error_ack.code), error_ack.msg);
+              auto error = map(error_ack.code).template get<Error>();
+              error_handler(Origin::EXCHANGE, RequestStatus::REJECTED, error, error_ack.msg);
             }
         }
         break;
