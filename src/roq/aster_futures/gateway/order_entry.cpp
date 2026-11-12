@@ -271,11 +271,11 @@ void OrderEntry::get_listen_key(TraceInfo const &trace_info) {
 void OrderEntry::get_listen_key_ack(Trace<web::rest::Response> const &event) {
   profile_.listen_key_ack([&]() {
     auto &[trace_info, response] = event;
+    log::warn("DEBUG response={}"sv, response);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
     };
     auto handle_success = [&](auto &body) {
-      log::warn("DEBUG body={}"sv, body);
       protocol::json::ListenKeyAck listen_key_ack{body, decode_buffer_};
       create_trace_and_dispatch_2(trace_info, listen_key_ack);
     };
@@ -319,7 +319,7 @@ void OrderEntry::get_account(TraceInfo const &trace_info) {
 void OrderEntry::get_account_ack(Trace<web::rest::Response> const &event) {
   profile_.account_ack([&]() {
     auto &[trace_info, response] = event;
-    // log::warn("DEBUG response={}"sv, response);
+    log::warn("DEBUG response={}"sv, response);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
     };
@@ -677,7 +677,7 @@ void OrderEntry::place_order_ack(Trace<web::rest::Response> const &event, uint8_
     auto &[trace_info, response] = event;
     log::warn("DEBUG response={}"sv, response);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(DEBUG origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       auto response = server::oms::Response{
           .request_type = RequestType::CREATE_ORDER,
           .origin = origin,
@@ -694,8 +694,10 @@ void OrderEntry::place_order_ack(Trace<web::rest::Response> const &event, uint8_
       create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
-      protocol::json::PlaceOrderAck place_order_ack{body, decode_buffer_};
-      create_trace_and_dispatch_2(trace_info, place_order_ack, user_id, order_id, version);
+      if (shared_.settings.oms.unsafe_order_ack) {
+        protocol::json::PlaceOrderAck place_order_ack{body, decode_buffer_};
+        create_trace_and_dispatch_2(trace_info, place_order_ack, user_id, order_id, version);
+      }
     };
     process_response(event, handle_error, handle_success);
   });
@@ -788,7 +790,7 @@ void OrderEntry::modify_order_ack(Trace<web::rest::Response> const &event, uint8
     auto &[trace_info, response] = event;
     log::warn("DEBUG response={}"sv, response);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(DEBUG origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       auto response = server::oms::Response{
           .request_type = RequestType::MODIFY_ORDER,
           .origin = origin,
@@ -805,8 +807,10 @@ void OrderEntry::modify_order_ack(Trace<web::rest::Response> const &event, uint8
       create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
-      protocol::json::ModifyOrderAck modify_order_ack{body, decode_buffer_};
-      create_trace_and_dispatch_2(trace_info, modify_order_ack, user_id, order_id, version);
+      if (shared_.settings.oms.unsafe_order_ack) {
+        protocol::json::ModifyOrderAck modify_order_ack{body, decode_buffer_};
+        create_trace_and_dispatch_2(trace_info, modify_order_ack, user_id, order_id, version);
+      }
     };
     process_response(event, handle_error, handle_success);
   });
@@ -899,7 +903,7 @@ void OrderEntry::cancel_order_ack(Trace<web::rest::Response> const &event, uint8
     auto &[trace_info, response] = event;
     log::warn("DEBUG response={}"sv, response);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(DEBUG origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       auto response = server::oms::Response{
           .request_type = RequestType::CANCEL_ORDER,
           .origin = origin,
@@ -916,8 +920,10 @@ void OrderEntry::cancel_order_ack(Trace<web::rest::Response> const &event, uint8
       create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
-      protocol::json::CancelOrderAck cancel_order_ack{body, decode_buffer_};
-      create_trace_and_dispatch_2(trace_info, cancel_order_ack, user_id, order_id, version);
+      if (shared_.settings.oms.unsafe_order_ack) {
+        protocol::json::CancelOrderAck cancel_order_ack{body, decode_buffer_};
+        create_trace_and_dispatch_2(trace_info, cancel_order_ack, user_id, order_id, version);
+      }
     };
     process_response(event, handle_error, handle_success);
   });
@@ -1013,7 +1019,7 @@ void OrderEntry::cancel_all_orders_ack(Trace<web::rest::Response> const &event, 
     auto &[trace_info, response] = event;
     log::warn("DEBUG response={}"sv, response);
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
-      log::warn(R"(DEBUG origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
+      log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       auto cancel_all_orders_ack = CancelAllOrdersAck{
           .stream_id = stream_id_,
           .account = account_.name,
