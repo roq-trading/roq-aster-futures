@@ -698,7 +698,7 @@ void OrderEntry::place_order_ack(Trace<web::rest::Response> const &event, uint8_
       protocol::json::PlaceOrderAck place_order_ack{body, decode_buffer_};
       log::info<2>("place_order_ack={}"sv, place_order_ack);
       log::warn("DEBUG place_order_ack={}"sv, place_order_ack);
-      if (shared_.settings.oms.unsafe_order_ack) {
+      if (shared_.settings.oms.allow_unsafe_order_ack) {
         create_trace_and_dispatch_2(trace_info, place_order_ack, user_id, order_id, version);
       }
     };
@@ -811,7 +811,7 @@ void OrderEntry::modify_order_ack(Trace<web::rest::Response> const &event, uint8
       protocol::json::ModifyOrderAck modify_order_ack{body, decode_buffer_};
       log::info<2>("modify_order_ack={}"sv, modify_order_ack);
       log::warn("DEBUG modify_order_ack={}"sv, modify_order_ack);
-      if (shared_.settings.oms.unsafe_order_ack) {
+      if (shared_.settings.oms.allow_unsafe_order_ack) {
         create_trace_and_dispatch_2(trace_info, modify_order_ack, user_id, order_id, version);
       }
     };
@@ -924,7 +924,7 @@ void OrderEntry::cancel_order_ack(Trace<web::rest::Response> const &event, uint8
       protocol::json::CancelOrderAck cancel_order_ack{body, decode_buffer_};
       log::info<2>("cancel_order_ack={}"sv, cancel_order_ack);
       log::warn("DEBUG cancel_order_ack={}"sv, cancel_order_ack);
-      if (shared_.settings.oms.unsafe_order_ack) {
+      if (shared_.settings.oms.allow_unsafe_order_ack) {
         create_trace_and_dispatch_2(trace_info, cancel_order_ack, user_id, order_id, version);
       }
     };
