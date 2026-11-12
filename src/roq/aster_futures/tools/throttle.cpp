@@ -19,7 +19,6 @@ namespace tools {
 
 namespace {
 auto const DEFAULT_BACKOFF = 1min;
-auto const BLOCKED_BACKOFF = 5min;
 }  // namespace
 
 // === HELPERS ===
