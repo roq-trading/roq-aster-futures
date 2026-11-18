@@ -455,7 +455,7 @@ void MarketData::operator()(Trace<protocol::json::DepthUpdate> const &event) {
       };
       auto request_snapshot = [&](auto retries) {
         log::info(R"(DEBUG REQUEST SNAPSHOT symbol="{}", retries={})"sv, depth_update.symbol, retries);
-        if (shared_.settings.ws.mbp_request_max_retries && shared_.settings.ws.mbp_request_max_retries < retries) {
+        if (shared_.settings.misc.mbp_request_max_retries && shared_.settings.misc.mbp_request_max_retries < retries) {
           log::fatal(R"(Unexpected: symbol="{}", retries={})"sv, depth_update.symbol, retries);
         }
         shared_.depth_request_queue.emplace_back(depth_update.symbol);
@@ -546,7 +546,7 @@ void MarketData::parse(TraceInfo const &trace_info, std::string_view const &mess
   profile_.parse([&]() {
     auto log_message = [&]() { log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message); };
     try {
-      if (!protocol::json::Parser::dispatch(*this, message, decode_buffer_, trace_info, shared_.settings.experimental.allow_unknown_event_types)) {
+      if (!protocol::json::Parser::dispatch(*this, message, decode_buffer_, trace_info, shared_.settings.app.disable_strict_parsing)) {
         log_message();
       }
     } catch (...) {

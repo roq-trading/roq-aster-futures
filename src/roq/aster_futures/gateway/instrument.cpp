@@ -11,7 +11,7 @@ namespace gateway {
 namespace {
 auto create_sequencer(auto &settings) {
   auto options = market::mbp::Sequencer::Options{
-      .timeout = settings.mbp.sequencer_timeout,
+      .timeout = settings.misc.mbp_sequencer_timeout,
       .max_updates = {},
   };
   return market::mbp::Sequencer{options};

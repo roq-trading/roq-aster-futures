@@ -350,7 +350,7 @@ void Rest::operator()(Trace<protocol::json::ExchangeInfoAck> const &event) {
 
 void Rest::get_depth(std::string_view const &symbol) {
   profile_.depth([&]() {
-    auto query = fmt::format("?symbol={}&limit={}"sv, symbol, shared_.settings.mbp.max_depth);
+    auto query = fmt::format("?symbol={}&limit={}"sv, symbol, shared_.settings.misc.mbp_max_depth);
     auto request = web::rest::Request{
         .method = web::http::Method::GET,
         .path = shared_.api.market_data.depth,
@@ -436,7 +436,7 @@ void Rest::operator()(Trace<protocol::json::DepthAck> const &event, std::string_
     };
     auto request_snapshot = [&](auto retries) {
       log::info(R"(DEBUG REQUEST SNAPSHOT symbol="{}", retries={})"sv, symbol, retries);
-      if (shared_.settings.ws.mbp_request_max_retries && shared_.settings.ws.mbp_request_max_retries < retries) {
+      if (shared_.settings.misc.mbp_request_max_retries && shared_.settings.misc.mbp_request_max_retries < retries) {
         log::fatal(R"(Unexpected: symbol="{}", retries={})"sv, symbol, retries);
       }
       shared_.depth_request_queue.emplace_back(symbol);

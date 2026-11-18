@@ -612,8 +612,8 @@ void OrderEntry::operator()(Trace<protocol::json::OrderAck> const &event) {
 
 void OrderEntry::get_user_trades(TraceInfo const &trace_info) {
   profile_.user_trades([&]() {
-    assert(shared_.settings.rest.download_fills_begin.count() > 0);
-    auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(trace_info.origin_create_time_utc - shared_.settings.rest.download_fills_begin);
+    assert(shared_.settings.download.trades_lookback.count() > 0);
+    auto start_time = std::chrono::duration_cast<std::chrono::milliseconds>(trace_info.origin_create_time_utc - shared_.settings.download.trades_lookback);
     auto helper = [&](auto &symbol) {
       auto query = protocol::json::Encoder::user_trades(encode_buffer_, start_time, symbol);
       auto query_2 = account_.create_query(trace_info, query);
@@ -1139,7 +1139,7 @@ void OrderEntry::check_request_queue(TraceInfo const &trace_info) {
 }
 
 void OrderEntry::check_countdown_cancel_all(TraceInfo const &trace_info) {
-  if (shared_.settings.rest.cancel_on_disconnect && next_heartbeat_ < trace_info.origin_create_time) {
+  if (!shared_.settings.app.disable_cancel_on_disconnect && next_heartbeat_ < trace_info.origin_create_time) {
     next_heartbeat_ = trace_info.origin_create_time + (shared_.settings.rest.ping_freq / 3);
     countdown_cancel_all(trace_info);
   }

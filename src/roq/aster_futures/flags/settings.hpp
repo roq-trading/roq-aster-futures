@@ -9,7 +9,6 @@
 #include "roq/server/flags/settings.hpp"
 
 #include "roq/aster_futures/flags/flags.hpp"
-#include "roq/aster_futures/flags/mbp.hpp"
 #include "roq/aster_futures/flags/misc.hpp"
 #include "roq/aster_futures/flags/rest.hpp"
 #include "roq/aster_futures/flags/ws.hpp"
@@ -24,7 +23,6 @@ struct ROQ_PUBLIC Settings : public server::flags::Settings, public flags::Flags
   flags::Misc misc;
   flags::REST rest;
   flags::WS ws;
-  flags::MBP mbp;
 };
 
 }  // namespace flags
@@ -42,13 +40,11 @@ struct fmt::formatter<roq::aster_futures::flags::Settings> {
         R"(misc={}, )"
         R"(rest={}, )"
         R"(ws={}, )"
-        R"(mbp={}, )"
         R"(server={})"
         R"(}})"sv,
         value.misc,
         value.rest,
         value.ws,
-        value.mbp,
         static_cast<roq::server::Settings const &>(value));
   }
 };

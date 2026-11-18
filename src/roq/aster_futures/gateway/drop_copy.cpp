@@ -235,7 +235,6 @@ int32_t DropCopy::download(Trace<State> const &event) {
         return 1;
       }
     case GET_TRADES:
-      // if (shared_.settings.rest.download_fills_begin.count() > 0 && !std::empty(shared_.settings.download.symbols)) {
       if (shared_.settings.download.trades_lookback.count()) {
         publish_downloading();
         request_.trades.request(trace_info);
@@ -534,7 +533,7 @@ void DropCopy::parse(TraceInfo const &trace_info, std::string_view const &messag
   profile_.parse([&]() {
     auto log_message = [&]() { log::warn(R"(*** PLEASE REPORT *** message="{}")"sv, message); };
     try {
-      if (!protocol::json::Parser::dispatch(*this, message, decode_buffer_, trace_info, shared_.settings.experimental.allow_unknown_event_types)) {
+      if (!protocol::json::Parser::dispatch(*this, message, decode_buffer_, trace_info, shared_.settings.app.disable_strict_parsing)) {
         log_message();
       }
     } catch (...) {
