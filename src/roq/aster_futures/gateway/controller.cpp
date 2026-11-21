@@ -53,6 +53,10 @@ Request &get_request(auto &requests, auto &account) {
   return *(*iter).second;
 }
 
+auto create_rest(auto &gateway, auto &context, auto &stream_id, auto &shared) {
+  return std::make_unique<Rest>(gateway, context, ++stream_id, shared);
+}
+
 template <typename R>
 R create_order_entry(auto &gateway, auto &context, auto &stream_id, auto &accounts, auto &shared, auto &requests) {
   using result_type = std::remove_cvref_t<R>;
@@ -96,9 +100,9 @@ uint8_t Controller::parse_api(Settings const &) {
 }
 
 Controller::Controller(server::Dispatcher &dispatcher, Settings const &settings, Config const &config, io::Context &context)
-    : dispatcher_{dispatcher}, master_account_{config.get_master_account()}, accounts_{create_accounts<decltype(accounts_)>(settings, config)},
-      context_{context}, shared_{dispatcher, settings}, requests_{create_requests<decltype(requests_)>(config, shared_)},
-      rest_{*this, context_, ++stream_id_, shared_},
+    : dispatcher_{dispatcher}, master_account_{config.get_master_account()}, context_{context}, shared_{dispatcher, settings},
+      accounts_{create_accounts<decltype(accounts_)>(settings, config)}, requests_{create_requests<decltype(requests_)>(config, shared_)},
+      rest_{create_rest(*this, context_, stream_id_, shared_)},
       order_entry_{create_order_entry<decltype(order_entry_)>(*this, context_, stream_id_, accounts_, shared_, requests_)},
       drop_copy_{create_drop_copy<decltype(drop_copy_)>(accounts_)} {
 }
@@ -242,7 +246,7 @@ void Controller::operator()(Trace<ListenKeyUpdate> const &event) {
     auto &request = get_request(requests_, account);
     auto obj = std::make_unique<DropCopy>(*this, context_, ++stream_id_, account_2, shared_, request, listen_key_update.listen_key);
     Start start;
-    create_trace_and_dispatch(*obj, trace_info, start);
+    create_trace_and_dispatch(dynamic_cast<server::Stream &>(*obj), trace_info, start);
     (*iter).second = std::move(obj);
   } else {
     (*(*iter).second)(event);
@@ -281,10 +285,10 @@ void Controller::check_drop_copy_zombies(TraceInfo const &trace_info) {
 void Controller::ensure_symbol_slices(TraceInfo const &trace_info, size_t size) {
   while (std::size(market_data_) < size) {
     log::debug("Create market-data (user-stream)"sv);
-    auto market_data = std::make_unique<MarketData>(*this, context_, ++stream_id_, shared_, std::size(market_data_));
+    auto obj = std::make_unique<MarketData>(*this, context_, ++stream_id_, shared_, std::size(market_data_));
     Start start;
-    create_trace_and_dispatch(*market_data, trace_info, start);
-    market_data_.emplace_back(std::move(market_data));
+    create_trace_and_dispatch(dynamic_cast<server::Stream &>(*obj), trace_info, start);
+    market_data_.emplace_back(std::move(obj));
   }
 }
 
@@ -295,10 +299,18 @@ void Controller::dispatch(Args &&...args) {
 
 template <typename... Args>
 void Controller::dispatch_helper(auto &self, Args &&...args) {
-  auto helper = [&](auto &target) { target(args...); };
-  helper(self.rest_);
+  auto helper = [&](auto &target) {
+    if constexpr (std::is_const_v<decltype(self)>) {
+      dynamic_cast<server::Stream const &>(target)(std::forward<Args>(args)...);
+    } else {
+      dynamic_cast<server::Stream &>(target)(std::forward<Args>(args)...);
+    }
+  };
+  helper(*self.rest_);
   for (auto &[_, order_entry] : self.order_entry_) {
-    helper(order_entry);
+    for (auto &item : order_entry.order_entry) {
+      helper(*item);
+    }
   }
   for (auto &[_, drop_copy] : self.drop_copy_) {
     if (static_cast<bool>(drop_copy)) {
@@ -322,38 +334,19 @@ Res Controller::dispatch_order_action(Trace<T> const &event, Args &&...args) {
 
 // OrderEntryRR
 
-Controller::OrderEntryRR::OrderEntryRR(std::vector<std::unique_ptr<OrderEntry>> &&order_entry) : order_entry_{std::move(order_entry)} {
-  for (auto &item : order_entry_) {
-    if (item == nullptr) {
-      log::fatal("HERE"sv);
-    }
-  }
+Controller::OrderEntryRR::OrderEntryRR(std::vector<std::unique_ptr<OrderEntry>> &&order_entry) : order_entry{std::move(order_entry)} {
 }
 
-template <typename... Args>
-void Controller::OrderEntryRR::operator()(Args &&...args) {
-  for (auto &item : order_entry_) {
-    (*item)(args...);
-  }
-}
-
-template <typename... Args>
-void Controller::OrderEntryRR::operator()(Args &&...args) const {
-  for (auto &item : order_entry_) {
-    (*item)(args...);
-  }
-}
-
-OrderEntry &Controller::OrderEntryRR::get_next() {
-  auto length = std::size(order_entry_);
+server::OrderActionStream &Controller::OrderEntryRR::get_next() {
+  auto length = std::size(order_entry);
   for (size_t offset = 0; offset < length; ++offset) {
     auto index = (index_ + offset) % length;
-    auto &order_entry = *(order_entry_[index]);
-    if (!order_entry.ready()) {
+    auto &obj = dynamic_cast<server::OrderActionStream &>(*(order_entry[index]));
+    if (!obj.ready()) {
       continue;
     }
     index_ = (index + 1) % length;
-    return order_entry;
+    return obj;
   }
   throw server::oms::NotReady{"get_next"sv};
 }
