@@ -82,7 +82,7 @@ struct create_metrics final : public utils::metrics::Factory {
 // === IMPLEMENTATION ===
 
 OrderEntry::OrderEntry(Handler &handler, io::Context &context, uint16_t stream_id, Account &account, Shared &shared, Request &request, bool master)
-    : handler_{handler}, stream_id_{stream_id}, name_{create_name(stream_id_, account)}, master_{master},
+    : server::OrderActionStream{stream_id}, handler_{handler}, name_{create_name(stream_id, account)}, master_{master},
       connection_{create_connection(*this, shared.settings, context, shared)}, decode_buffer_{shared.settings.misc.decode_buffer_size, MAX_DECODE_BUFFER_DEPTH},
       counter_{
           .disconnect = create_metrics(shared.settings, name_, "disconnect"sv),
@@ -168,25 +168,26 @@ void OrderEntry::operator()(metrics::Writer &writer) const {
 
 void OrderEntry::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {
   auto &[trace_info, connection_status] = event;
-  connection_status_ = connection_status;
-  auto stream_status = StreamStatus{
-      .stream_id = stream_id_,
-      .account = account_.name,
-      .supports = SUPPORTS,
-      .transport = Transport::TCP,
-      .protocol = Protocol::HTTP,
-      .encoding = {Encoding::JSON},
-      .priority = Priority::PRIMARY,
-      .connection_status = connection_status_,
-      .reason = reason,
-      .interface = (*connection_).get_interface(),
-      .proxy = (*connection_).get_proxy(),
-      .peer = (*connection_).get_current_peer(),
-      .authority = (*connection_).get_current_authority(),
-      .path = (*connection_).get_current_path(),
-  };
-  log::info("stream_status={}"sv, stream_status);
-  create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
+  if (update(connection_status, reason)) {
+    auto stream_status = StreamStatus{
+        .stream_id = stream_id(),
+        .account = account_.name,
+        .supports = SUPPORTS,
+        .transport = Transport::TCP,
+        .protocol = Protocol::HTTP,
+        .encoding = {Encoding::JSON},
+        .priority = Priority::PRIMARY,
+        .connection_status = connection_status,
+        .reason = reason,
+        .interface = (*connection_).get_interface(),
+        .proxy = (*connection_).get_proxy(),
+        .peer = (*connection_).get_current_peer(),
+        .authority = (*connection_).get_current_authority(),
+        .path = (*connection_).get_current_path(),
+    };
+    log::info("stream_status={}"sv, stream_status);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, stream_status);
+  }
 }
 
 // server::OrderActionStream
@@ -206,7 +207,7 @@ void OrderEntry::operator()(Trace<server::oms::OrderActionBatchRollback> const &
 uint16_t OrderEntry::operator()(
     Trace<CreateOrder> const &event, server::oms::Order const &order, server::oms::RefData const &ref_data, std::string_view const &request_id) {
   place_order(event, order, ref_data, request_id);
-  return stream_id_;
+  return stream_id();
 }
 
 uint16_t OrderEntry::operator()(
@@ -216,7 +217,7 @@ uint16_t OrderEntry::operator()(
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
   modify_order(event, order, ref_data, request_id, previous_request_id);
-  return stream_id_;
+  return stream_id();
 }
 
 uint16_t OrderEntry::operator()(
@@ -226,12 +227,12 @@ uint16_t OrderEntry::operator()(
     std::string_view const &request_id,
     std::string_view const &previous_request_id) {
   cancel_order(event, order, ref_data, request_id, previous_request_id);
-  return stream_id_;
+  return stream_id();
 }
 
 uint16_t OrderEntry::operator()(Trace<CancelAllOrders> const &event, std::string_view const &request_id) {
   cancel_all_orders(event, request_id);
-  return stream_id_;
+  return stream_id();
 }
 
 // web::rest::Client::Handler
@@ -251,7 +252,7 @@ void OrderEntry::operator()(Trace<web::rest::Disconnected> const &event) {
 void OrderEntry::operator()(Trace<web::rest::Latency> const &event) {
   auto &[trace_info, latency] = event;
   auto external_latency = ExternalLatency{
-      .stream_id = stream_id_,
+      .stream_id = stream_id(),
       .account = account_.name,
       .latency = latency.sample,
   };
@@ -350,7 +351,7 @@ void OrderEntry::operator()(Trace<protocol::json::AccountAck> const &event) {
   auto &[trace_info, account_ack] = event;
   for (auto &item : account_ack.assets) {
     auto funds_update = FundsUpdate{
-        .stream_id = stream_id_,
+        .stream_id = stream_id(),
         .account = account_.name,
         .currency = item.asset,
         .margin_mode = {},
@@ -369,7 +370,7 @@ void OrderEntry::operator()(Trace<protocol::json::AccountAck> const &event) {
     auto long_quantity = std::max(0.0, item.position_amt);
     auto short_quantity = std::max(0.0, -item.position_amt);
     auto position_update = PositionUpdate{
-        .stream_id = stream_id_,
+        .stream_id = stream_id(),
         .account = account_.name,
         .exchange = shared_.settings.exchange,
         .symbol = item.symbol,
@@ -468,7 +469,7 @@ void OrderEntry::operator()(Trace<protocol::json::OpenOrdersAck> const &event) {
         .sending_time_utc = {},
     };
     log::warn("DEBUG order_update={}"sv, order_update);
-    create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
+    create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id());
   }
 }
 
@@ -541,7 +542,7 @@ void OrderEntry::get_order_ack(Trace<web::rest::Response> const &event, std::str
           .sending_time_utc = {},
       };
       log::warn("DEBUG order_update={}"sv, order_update);
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id());
     };
     auto handle_success = [&](auto &body) {
       protocol::json::OrderAck order_ack{body, decode_buffer_};
@@ -605,7 +606,7 @@ void OrderEntry::operator()(Trace<protocol::json::OrderAck> const &event) {
       .sending_time_utc = {},
   };
   log::warn("DEBUG order_update={}"sv, order_update);
-  create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id());
 }
 
 // user-trades
@@ -709,7 +710,7 @@ void OrderEntry::place_order_ack(Trace<web::rest::Response> const &event, uint8_
           .quantity = NaN,
           .price = NaN,
       };
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, user_id, order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id(), user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
       protocol::json::PlaceOrderAck place_order_ack{body, decode_buffer_};
@@ -770,7 +771,7 @@ void OrderEntry::operator()(
       .sending_time_utc = {},
   };
   log::warn("DEBUG order_update={}"sv, order_update);
-  create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id());
 }
 
 // modify-order
@@ -825,7 +826,7 @@ void OrderEntry::modify_order_ack(Trace<web::rest::Response> const &event, uint8
           .quantity = NaN,
           .price = NaN,
       };
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, user_id, order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id(), user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
       protocol::json::ModifyOrderAck modify_order_ack{body, decode_buffer_};
@@ -886,7 +887,7 @@ void OrderEntry::operator()(
       .sending_time_utc = {},
   };
   log::warn("DEBUG order_update={}"sv, order_update);
-  create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id());
 }
 
 // cancel-order
@@ -941,7 +942,7 @@ void OrderEntry::cancel_order_ack(Trace<web::rest::Response> const &event, uint8
           .quantity = NaN,
           .price = NaN,
       };
-      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id_, user_id, order_id);
+      create_trace_and_dispatch(shared_.dispatcher, trace_info, response, stream_id(), user_id, order_id);
     };
     auto handle_success = [&](auto &body) {
       protocol::json::CancelOrderAck cancel_order_ack{body, decode_buffer_};
@@ -1002,7 +1003,7 @@ void OrderEntry::operator()(
       .sending_time_utc = {},
   };
   log::warn("DEBUG order_update={}"sv, order_update);
-  create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id_);
+  create_trace_and_dispatch(shared_.dispatcher, trace_info, order_update, stream_id());
 }
 
 // cancel-all-orders
@@ -1046,7 +1047,7 @@ void OrderEntry::cancel_all_orders_ack(Trace<web::rest::Response> const &event) 
     auto handle_error = [&](auto origin, auto status, auto error, auto const &text) {
       log::warn(R"(origin={}, error={}, status={}, text="{}")"sv, origin, error, status, text);
       auto cancel_all_orders_ack = CancelAllOrdersAck{
-          .stream_id = stream_id_,
+          .stream_id = stream_id(),
           .account = account_.name,
           .order_id = {},
           .exchange = shared_.settings.exchange,
