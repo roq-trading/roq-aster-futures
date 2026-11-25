@@ -117,26 +117,6 @@ OrderEntry::OrderEntry(Handler &handler, io::Context &context, uint16_t stream_i
 
 // server::Stream
 
-void OrderEntry::operator()(Trace<Start> const &event) {
-  (*connection_)(event);
-}
-
-void OrderEntry::operator()(Trace<Stop> const &event) {
-  (*connection_)(event);
-}
-
-void OrderEntry::operator()(Trace<Timer> const &event) {
-  auto &[trace_info, timer] = event;
-  if ((*connection_)(event)) {
-    if (ready()) {
-      if (master_) {
-        check_request_queue(trace_info);
-        check_countdown_cancel_all(trace_info);
-      }
-    }
-  }
-}
-
 void OrderEntry::operator()(metrics::Writer &writer) const {
   writer
       // counter
@@ -164,6 +144,26 @@ void OrderEntry::operator()(metrics::Writer &writer) const {
       .write(profile_.countdown_cancel_all_ack, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY);
+}
+
+void OrderEntry::operator()(Trace<Start> const &event) {
+  (*connection_)(event);
+}
+
+void OrderEntry::operator()(Trace<Stop> const &event) {
+  (*connection_)(event);
+}
+
+void OrderEntry::operator()(Trace<Timer> const &event) {
+  auto &[trace_info, timer] = event;
+  if ((*connection_)(event)) {
+    if (ready()) {
+      if (master_) {
+        check_request_queue(trace_info);
+        check_countdown_cancel_all(trace_info);
+      }
+    }
+  }
 }
 
 void OrderEntry::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {
@@ -235,13 +235,13 @@ void OrderEntry::operator()(Trace<CancelAllOrders> const &event, std::string_vie
 
 void OrderEntry::operator()(Trace<web::rest::Connected> const &event) {
   auto &[trace_info, connected] = event;
-  create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
+  publish(trace_info, ConnectionStatus::READY);
 }
 
 void OrderEntry::operator()(Trace<web::rest::Disconnected> const &event) {
   auto &[trace_info, disconnected] = event;
   ++counter_.disconnect;
-  create_trace_and_dispatch_2(trace_info, ConnectionStatus::DISCONNECTED);
+  publish(trace_info, ConnectionStatus::DISCONNECTED);
   next_heartbeat_ = {};
 }
 

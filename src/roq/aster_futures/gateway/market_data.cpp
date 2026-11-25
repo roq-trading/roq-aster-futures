@@ -102,23 +102,6 @@ MarketData::MarketData(Handler &handler, io::Context &context, uint16_t stream_i
 
 // server::Stream
 
-void MarketData::operator()(Trace<Start> const &event) {
-  (*connection_)(event);
-}
-
-void MarketData::operator()(Trace<Stop> const &event) {
-  (*connection_)(event);
-}
-
-void MarketData::operator()(Trace<Timer> const &event) {
-  auto &[trace_info, timer] = event;
-  if ((*connection_)(event)) {
-    if (ready()) {
-      check_request_queue(trace_info);
-    }
-  }
-}
-
 void MarketData::operator()(metrics::Writer &writer) const {
   writer
       // counter
@@ -135,6 +118,23 @@ void MarketData::operator()(metrics::Writer &writer) const {
       .write(profile_.depth_update, metrics::Type::PROFILE)
       // latency
       .write(latency_.ping, metrics::Type::LATENCY);
+}
+
+void MarketData::operator()(Trace<Start> const &event) {
+  (*connection_)(event);
+}
+
+void MarketData::operator()(Trace<Stop> const &event) {
+  (*connection_)(event);
+}
+
+void MarketData::operator()(Trace<Timer> const &event) {
+  auto &[trace_info, timer] = event;
+  if ((*connection_)(event)) {
+    if (ready()) {
+      check_request_queue(trace_info);
+    }
+  }
 }
 
 void MarketData::operator()(Trace<ConnectionStatus> const &event, std::string_view const &reason) {
@@ -177,13 +177,13 @@ void MarketData::operator()(Trace<web::socket::Connected> const &) {
 void MarketData::operator()(Trace<web::socket::Disconnected> const &event) {
   auto &[trace_info, disconnected] = event;
   ++counter_.disconnect;
-  create_trace_and_dispatch_2(trace_info, ConnectionStatus::DISCONNECTED);
+  publish(trace_info, ConnectionStatus::DISCONNECTED);
   request_queue_.clear();
 }
 
 void MarketData::operator()(Trace<web::socket::Ready> const &event) {
   auto &[trace_info, ready] = event;
-  create_trace_and_dispatch_2(trace_info, ConnectionStatus::READY);
+  publish(trace_info, ConnectionStatus::READY);
   subscribe();
 }
 
